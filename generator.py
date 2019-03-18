@@ -111,7 +111,7 @@ str = []
 for a in tokens:
     str.append(a)
 
-mark = make_markov(1, str)
+mark = make_markov(3, str)
 window, d = random.choice(list(mark.items()))
 print(window)
-print(generate_markov(mark, 1, window))
+print(generate_markov(mark, 3, window))
