@@ -11,16 +11,15 @@ def create_db(order=3):
     sql = """
     CREATE TABLE tag(
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    tag TEXT);
+    tag TEXT NOT NULL UNIQUE);
 
     CREATE TABLE category(
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    category TEXT);
+    category TEXT NOT NULL UNIQUE);
 
     CREATE TABLE word(
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    word TEXT);
-
+    word TEXT NOT NULL UNIQUE);
 
     CREATE TABLE window_word(
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -30,40 +29,18 @@ def create_db(order=3):
 
     CREATE TABLE ww_tag(
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    ww_id INTEGER,
-    tag_id INTEGER);
+    ww_id INTEGER NOT NULL REFERENCES window_word(id),
+    tag_id INTEGER NOT NULL REFERENCES tag(id));
 
     CREATE TABLE ww_category(
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    ww_id INTEGER,
-    category_id);
+    ww_id INTEGER NOT NULL REFERENCES window_word(id),
+    category_id INTEGER NOT NULL REFERENCES category(id));
       
     CREATE TABLE window(
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"""
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    window TEXT NOT NULL UNIQUE);"""
      
-    if order == 1:
-        sql += """
-                word_1 TEXT);
-                """
-    elif order == 2:
-        sql += """
-                word_1 TEXT,
-                word_2 TEXT);
-                """
-    elif order == 3:
-        sql += """
-                word_1 TEXT,
-                word_2 TEXT,
-                word_3 TEXT);
-                """
-    elif order == 4:
-        sql += """
-                word_1 TEXT,
-                word_2 TEXT,
-                word_3 TEXT,
-                word_4 TEXT);
-                """
-
     try:
         cursor.executescript(sql)
     except sqlite3.DatabaseError as err:
@@ -75,7 +52,51 @@ def create_db(order=3):
     cursor.close()
     conn.close()
 
+def input_db_tag(cursor, tag):
+    sql = "SELECT id FROM tag WHERE tag='{}'".format(tag)
+    cursor.execute(sql)
+    tag_id = cursor.fetchone()
+    if tag_id == None:
+        sql = "INSERT OR IGNORE INTO tag (tag) VALUES ('{}')".format(tag) 
+        cursor.execute(sql)
+        tag_id = cursor.lastrowid
+    else:
+        tag_id = tag_id[0]
+    return tag_id
+
+def input_db_category(cursor, category):
+    sql = "INSERT OR IGNORE INTO category (category) VALUES ('{}')".format(category) 
+    cursor.execute(sql)
+    return cursor.lastrowid
+
+def input_db_word(cursor, word):
+    sql = "INSERT OR IGNORE INTO word (word) VALUES ('{}')".format(word) 
+    cursor.execute(sql)
+    return cursor.lastrowid
+
+def input_db_window(cursor, window):
+    sql = "INSERT OR IGNORE INTO window (window) VALUES ('{}')".format(window) 
+    cursor.execute(sql)
+    return cursor.lastrowid
+
+def input_window_word(cursor, window_id, word_id):
+    sql = "INSERT OR IGNORE INTO window (window) VALUES ('{}')".format(window) 
+    cursor.execute(sql)
+    return cursor.lastrowid
+
 if __name__ == '__main__':
-    create_db()
-    create_db(1)
-    create_db(2)
+    #create_db()
+    #create_db(1)
+    #create_db(2)
+
+    conn = sqlite3.connect('markovdb_order3')
+    cursor = conn.cursor()
+    
+    tag_id = input_db_tag(cursor, 'tag_22')
+    cat_id = input_db_category(cursor, 'cat_1')
+    word_id= input_db_word(cursor, 'word_1')
+    window_id= input_db_window(cursor, 'window_1')
+    conn.commit()
+    
+    cursor.close()
+    conn.close()

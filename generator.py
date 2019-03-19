@@ -13,7 +13,7 @@ def count_entry(word, dictionary):
 def make_markov(order, data):
     '''Создаёт структуру для цепи Маркова,
     order - порядок цепи Маркова, 
-    data - массив входных слов'''
+    data - список входных слов'''
 
     markov_model = dict()
     
