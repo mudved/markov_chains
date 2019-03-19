@@ -1,8 +1,6 @@
 import sqlite3
 
 def create_db(order=3):
-    """Создаёт базу данных для хранения модели цепи Маркова
-    order - порядок цепи"""
 
     name_db = 'markovdb_order'+str(order)
     conn = sqlite3.connect(name_db)
@@ -44,61 +42,25 @@ def create_db(order=3):
     try:
         cursor.executescript(sql)
     except sqlite3.DatabaseError as err:
-        print("Ошибка: ", err)
+        print("Error: ", err)
     else:
-        print("Запрос выполнен успешно")
+        print("Zapros completed OK")
 
     conn.commit()
     cursor.close()
     conn.close()
 
-def input_db_tag(cursor, tag):
-    sql = "SELECT id FROM tag WHERE tag='{}'".format(tag)
+def input_db(cursor, table_name, string):
+    sql = "SELECT id FROM {0} WHERE {0}='{1}'".format(table_name, string)
     cursor.execute(sql)
-    tag_id = cursor.fetchone()
-    if tag_id == None:
-        sql = "INSERT OR IGNORE INTO tag (tag) VALUES ('{}')".format(tag) 
+    string_id = cursor.fetchone()
+    if string_id == None:
+        sql = "INSERT OR IGNORE INTO {0} ({0}) VALUES ('{1}')".format(table_name, string) 
         cursor.execute(sql)
-        tag_id = cursor.lastrowid
+        string_id = cursor.lastrowid
     else:
-        tag_id = tag_id[0]
-    return tag_id
-
-def input_db_category(cursor, category):
-    sql = "SELECT id FROM category WHERE category='{}'".format(category)
-    cursor.execute(sql)
-    category_id = cursor.fetchone()
-    if category_id == None:
-        sql = "INSERT OR IGNORE INTO category (category) VALUES ('{}')".format(category) 
-        cursor.execute(sql)
-        category_id = cursor.lastrowid
-    else:
-        category_id = category_id[0]
-    return category_id
-
-def input_db_word(cursor, word):
-    sql = "SELECT id FROM word WHERE word='{}'".format(word)
-    cursor.execute(sql)
-    word_id = cursor.fetchone()
-    if word_id == None:
-        sql = "INSERT OR IGNORE INTO word (word) VALUES ('{}')".format(word) 
-        cursor.execute(sql)
-        word_id = cursor.lastrowid
-    else:
-        word_id = word_id[0]
-    return word_id
-
-def input_db_window(cursor, window):
-    sql = "SELECT id FROM window WHERE window='{}'".format(window)
-    cursor.execute(sql)
-    window_id = cursor.fetchone()
-    if window_id == None:
-        sql = "INSERT OR IGNORE INTO window (window) VALUES ('{}')".format(window) 
-        cursor.execute(sql)
-        window_id = cursor.lastrowid
-    else:
-        window_id = window_id[0]
-    return window_id
+        string_id = string_id[0]
+    return string_id
 
 def input_window_word(cursor, window_id, word_id):
     sql = "SELECT id, count FROM window_word WHERE window_id='{0}' AND word_id='{1}'".format(window_id, word_id)
@@ -121,10 +83,15 @@ if __name__ == '__main__':
     conn = sqlite3.connect('markovdb_order3')
     cursor = conn.cursor()
     
-    tag_id = input_db_tag(cursor, 'tag_2444')
-    cat_id = input_db_category(cursor, 'cat_22')
-    word_id= input_db_word(cursor, 'word_1')
-    window_id= input_db_window(cursor, 'window_1111xxxx')
+    #tag_id = input_db_tag(cursor, 'tag_2444')
+    tag_id = input_db(cursor, 'tag', 'proba_tag_2')
+    #cat_id = input_db_category(cursor, 'cat_22')
+    cat_id = input_db(cursor, 'category', 'proba_cat_2')
+    #word_id= input_db_word(cursor, 'word_1')
+    word_id = input_db(cursor, 'word', 'proba_word222_2')
+    #window_id= input_db_window(cursor, 'window_1111xxxx')
+    window_id = input_db(cursor, 'window', 'proba_window_2')
+
     window_word_id = input_window_word(cursor, 1, 1)
     print(window_word_id)
     conn.commit()
