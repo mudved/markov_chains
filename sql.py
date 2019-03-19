@@ -71,7 +71,10 @@ def input_window_word(cursor, window_id, word_id):
         cursor.execute(sql)
         window_word_id = cursor.lastrowid
     else:
+        window_word_count = window_word_id[0][1] + 1
         window_word_id = window_word_id[0][0]
+        sql = "UPDATE window_word SET count = {0} WHERE id = {1}".format(window_word_count, window_word_id)
+        cursor.execute(sql)
     return window_word_id
 
 
@@ -83,16 +86,12 @@ if __name__ == '__main__':
     conn = sqlite3.connect('markovdb_order3')
     cursor = conn.cursor()
     
-    #tag_id = input_db_tag(cursor, 'tag_2444')
     tag_id = input_db(cursor, 'tag', 'proba_tag_2')
-    #cat_id = input_db_category(cursor, 'cat_22')
     cat_id = input_db(cursor, 'category', 'proba_cat_2')
-    #word_id= input_db_word(cursor, 'word_1')
     word_id = input_db(cursor, 'word', 'proba_word222_2')
-    #window_id= input_db_window(cursor, 'window_1111xxxx')
     window_id = input_db(cursor, 'window', 'proba_window_2')
 
-    window_word_id = input_window_word(cursor, 1, 1)
+    window_word_id = input_window_word(cursor, 27, 1)
     print(window_word_id)
     conn.commit()
     
