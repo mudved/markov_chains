@@ -65,24 +65,53 @@ def input_db_tag(cursor, tag):
     return tag_id
 
 def input_db_category(cursor, category):
-    sql = "INSERT OR IGNORE INTO category (category) VALUES ('{}')".format(category) 
+    sql = "SELECT id FROM category WHERE category='{}'".format(category)
     cursor.execute(sql)
-    return cursor.lastrowid
+    category_id = cursor.fetchone()
+    if category_id == None:
+        sql = "INSERT OR IGNORE INTO category (category) VALUES ('{}')".format(category) 
+        cursor.execute(sql)
+        category_id = cursor.lastrowid
+    else:
+        category_id = category_id[0]
+    return category_id
 
 def input_db_word(cursor, word):
-    sql = "INSERT OR IGNORE INTO word (word) VALUES ('{}')".format(word) 
+    sql = "SELECT id FROM word WHERE word='{}'".format(word)
     cursor.execute(sql)
-    return cursor.lastrowid
+    word_id = cursor.fetchone()
+    if word_id == None:
+        sql = "INSERT OR IGNORE INTO word (word) VALUES ('{}')".format(word) 
+        cursor.execute(sql)
+        word_id = cursor.lastrowid
+    else:
+        word_id = word_id[0]
+    return word_id
 
 def input_db_window(cursor, window):
-    sql = "INSERT OR IGNORE INTO window (window) VALUES ('{}')".format(window) 
+    sql = "SELECT id FROM window WHERE window='{}'".format(window)
     cursor.execute(sql)
-    return cursor.lastrowid
+    window_id = cursor.fetchone()
+    if window_id == None:
+        sql = "INSERT OR IGNORE INTO window (window) VALUES ('{}')".format(window) 
+        cursor.execute(sql)
+        window_id = cursor.lastrowid
+    else:
+        window_id = window_id[0]
+    return window_id
 
 def input_window_word(cursor, window_id, word_id):
-    sql = "INSERT OR IGNORE INTO window (window) VALUES ('{}')".format(window) 
+    sql = "SELECT id, count FROM window_word WHERE window_id='{0}' AND word_id='{1}'".format(window_id, word_id)
     cursor.execute(sql)
-    return cursor.lastrowid
+    window_word_id = cursor.fetchall()
+    if window_word_id == []:
+        sql = "INSERT OR IGNORE INTO window_word (window_id, word_id, count) VALUES ('{0}', '{1}', '1')".format(window_id, word_id) 
+        cursor.execute(sql)
+        window_word_id = cursor.lastrowid
+    else:
+        window_word_id = window_word_id[0][0]
+    return window_word_id
+
 
 if __name__ == '__main__':
     #create_db()
@@ -92,10 +121,12 @@ if __name__ == '__main__':
     conn = sqlite3.connect('markovdb_order3')
     cursor = conn.cursor()
     
-    tag_id = input_db_tag(cursor, 'tag_22')
-    cat_id = input_db_category(cursor, 'cat_1')
+    tag_id = input_db_tag(cursor, 'tag_2444')
+    cat_id = input_db_category(cursor, 'cat_22')
     word_id= input_db_word(cursor, 'word_1')
-    window_id= input_db_window(cursor, 'window_1')
+    window_id= input_db_window(cursor, 'window_1111xxxx')
+    window_word_id = input_window_word(cursor, 1, 1)
+    print(window_word_id)
     conn.commit()
     
     cursor.close()
