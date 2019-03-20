@@ -1,5 +1,54 @@
 import sqlite3
 
+def create_db_ozu(order=3):
+
+    name_db = ':memory:'
+    conn = sqlite3.connect(name_db)
+    cursor = conn.cursor()
+
+    sql = """
+    CREATE TABLE tag(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    tag TEXT NOT NULL UNIQUE);
+
+    CREATE TABLE category(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL UNIQUE);
+
+    CREATE TABLE word(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    word TEXT NOT NULL UNIQUE);
+
+    CREATE TABLE window_word(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    word_id INTEGER NOT NULL REFERENCES word(id),
+    window_id INTEGER NOT NULL REFERENCES window(id),
+    count INTEGER);
+
+    CREATE TABLE ww_tag(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    ww_id INTEGER NOT NULL REFERENCES window_word(id),
+    tag_id INTEGER NOT NULL REFERENCES tag(id));
+
+    CREATE TABLE ww_category(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    ww_id INTEGER NOT NULL REFERENCES window_word(id),
+    category_id INTEGER NOT NULL REFERENCES category(id));
+      
+    CREATE TABLE window(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    window TEXT NOT NULL UNIQUE);"""
+     
+    try:
+        cursor.executescript(sql)
+    except sqlite3.DatabaseError as err:
+        print("Error: ", err)
+    else:
+        print("DB is created")
+        conn.commit()
+
+    return conn
+
 def create_db(order=3):
 
     name_db = 'markovdb_order'+str(order)

@@ -1,5 +1,6 @@
 import re
 import os
+import pickle
 import random
 from mudved_sql import *
 
@@ -15,12 +16,12 @@ def count_entry(word, dictionary):
         dictionary[word] = 1
     return dictionary    
 
-def make_markov(order, data):
+def make_markov(order, data, markov_model):
     '''Создаёт структуру для цепи Маркова,
     order - порядок цепи Маркова, 
-    data - список входных слов'''
+    data - список входных слов
+    markov_model - модель цепи Маркова'''
 
-    markov_model = dict()
     
     for i in range(0, len(data)-order):
         window = tuple(data[i:i+order])
@@ -38,13 +39,14 @@ def make_markov_db(order, data):
     order - порядок цепи Маркова, 
     data - список входных слов'''
 
-    name_db = 'markovdb_order' + str(order) 
-    if not os.path.exists(name_db):
-        print("Not found BD in current directory.")
-        print("Create DB ", name_db, " in current directory")
-        create_db(order)
+    #name_db = 'markovdb_order' + str(order) 
+    #if not os.path.exists(name_db):
+    #    print("Not found BD in current directory.")
+    #    print("Create DB ", name_db, " in current directory")
+    #    create_db(order)
 
-    conn = sqlite3.connect(name_db)
+    #conn = sqlite3.connect(name_db)
+    conn = create_db_ozu()
     print("In progress ", str(len(data)-order), " words.")
 
     for i in range(0, len(data)-order):
@@ -137,14 +139,44 @@ def generate_markov(markov_model, order, window, number_of_words=100):
         window = new_window
         count += 1
 
-lines = gen_lines('podrostki.txt')
-tokens = gen_tokens(lines)
-data = []
-for a in tokens:
-    data.append(a)
+def save_markov(data):
+    '''Сохраняет модель Маркова в файл data.pickle'''
 
-#mark = make_markov(3, data)
-make_markov_db(3, data)
-#window, d = random.choice(list(mark.items()))
-#print(window)
-#print(generate_markov(mark, 3, window))
+    with open('data.pickle', 'wb') as f:
+        pickle.dump(data, f)
+    print("Data is save in pickle")
+
+def load_markov():
+    '''Загружает модель Маркова из файла data.pickle'''
+
+    with open('data.pickle', 'rb') as f:
+        data = pickle.load(f)
+    print("Data load from pickle")
+    return data
+
+def read_file(filename):
+    '''Читает входной файл с текстами и загружает в список'''
+
+    if not os.path.exists(filename):
+        print("Not found file ", filename)
+        return False
+
+    lines = gen_lines(filename)
+    tokens = gen_tokens(lines)
+    data = []
+    for a in tokens:
+        data.append(a)
+    return data
+
+if __name__=='__main__':
+    data = read_file('podrostki.txt')
+    markov_model = dict()
+    mark = make_markov(3, data, markov_model)
+    save_markov(mark)
+    new_mark = load_markov()
+
+    window, d = random.choice(list(mark.items()))
+    print(window)
+    print(generate_markov(mark, 3, window))
+
+    #make_markov_db(3, data)
