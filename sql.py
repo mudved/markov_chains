@@ -45,36 +45,74 @@ def create_db(order=3):
         print("Error: ", err)
     else:
         print("Zapros completed OK")
+        conn.commit()
 
-    conn.commit()
     cursor.close()
     conn.close()
 
-def input_db(cursor, table_name, string):
+def input_db(conn, table_name, string):
+    cursor = conn.cursor()
     sql = "SELECT id FROM {0} WHERE {0}='{1}'".format(table_name, string)
-    cursor.execute(sql)
-    string_id = cursor.fetchone()
+
+    try:    
+        cursor.execute(sql)
+        string_id = cursor.fetchone()
+    except sqlite3.DatabaseError as err:
+        print("input_db Error: ", err)
+    else:
+        conn.commit()
+
     if string_id == None:
         sql = "INSERT OR IGNORE INTO {0} ({0}) VALUES ('{1}')".format(table_name, string) 
-        cursor.execute(sql)
-        string_id = cursor.lastrowid
+
+        try:
+            cursor.execute(sql)
+        except sqlite3.DatabaseError as err:
+            print("input_db write Error: ", err)
+        else:
+            conn.commit()
+            string_id = cursor.lastrowid
     else:
         string_id = string_id[0]
+
+    cursor.close()
     return string_id
 
-def input_window_word(cursor, window_id, word_id):
+def input_window_word(conn, window_id, word_id):
+    cursor = conn.cursor()
     sql = "SELECT id, count FROM window_word WHERE window_id='{0}' AND word_id='{1}'".format(window_id, word_id)
-    cursor.execute(sql)
-    window_word_id = cursor.fetchall()
+
+    try:
+        cursor.execute(sql)
+        window_word_id = cursor.fetchall()
+    except sqlite3.DatabaseError as err:
+        print("input_window_word Error: ", err)
+    else:
+        conn.commit()
+
     if window_word_id == []:
         sql = "INSERT OR IGNORE INTO window_word (window_id, word_id, count) VALUES ('{0}', '{1}', '1')".format(window_id, word_id) 
-        cursor.execute(sql)
-        window_word_id = cursor.lastrowid
+
+        try:
+            cursor.execute(sql)
+        except sqlite3.DatabaseError as err:
+            print("input_window_word write Error: ", err)
+        else:
+            conn.commit()
+            window_word_id = cursor.lastrowid
     else:
         window_word_count = window_word_id[0][1] + 1
         window_word_id = window_word_id[0][0]
         sql = "UPDATE window_word SET count = {0} WHERE id = {1}".format(window_word_count, window_word_id)
-        cursor.execute(sql)
+
+        try:
+            cursor.execute(sql)
+        except sqlite3.DatabaseError as err:
+            print("input_window_word update Error: ", err)
+        else:
+            conn.commit()
+
+    cursor.close()
     return window_word_id
 
 
@@ -84,16 +122,13 @@ if __name__ == '__main__':
     #create_db(2)
 
     conn = sqlite3.connect('markovdb_order3')
-    cursor = conn.cursor()
     
-    tag_id = input_db(cursor, 'tag', 'proba_tag_2')
-    cat_id = input_db(cursor, 'category', 'proba_cat_2')
-    word_id = input_db(cursor, 'word', 'proba_word222_2')
-    window_id = input_db(cursor, 'window', 'proba_window_2')
+    tag_id = input_db(conn, 'tag', 'proba_tag_55')
+    cat_id = input_db(conn, 'category', 'proba_cat_55')
+    word_id = input_db(conn, 'word', 'proba_word_55')
+    window_id = input_db(conn, 'window', 'proba_window_55')
 
-    window_word_id = input_window_word(cursor, 27, 1)
+    window_word_id = input_window_word(conn, window_id, word_id)
     print(window_word_id)
-    conn.commit()
     
-    cursor.close()
     conn.close()
