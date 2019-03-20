@@ -44,7 +44,7 @@ def create_db(order=3):
     except sqlite3.DatabaseError as err:
         print("Error: ", err)
     else:
-        print("Zapros completed OK")
+        print("DB is created")
         conn.commit()
 
     cursor.close()
@@ -59,8 +59,6 @@ def input_db(conn, table_name, string):
         string_id = cursor.fetchone()
     except sqlite3.DatabaseError as err:
         print("input_db Error: ", err)
-    else:
-        conn.commit()
 
     if string_id == None:
         sql = "INSERT OR IGNORE INTO {0} ({0}) VALUES ('{1}')".format(table_name, string) 
@@ -87,8 +85,6 @@ def input_window_word(conn, window_id, word_id):
         window_word_id = cursor.fetchall()
     except sqlite3.DatabaseError as err:
         print("input_window_word Error: ", err)
-    else:
-        conn.commit()
 
     if window_word_id == []:
         sql = "INSERT OR IGNORE INTO window_word (window_id, word_id, count) VALUES ('{0}', '{1}', '1')".format(window_id, word_id) 

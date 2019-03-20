@@ -1,5 +1,10 @@
 import re
+import os
 import random
+from mudved_sql import *
+
+def show_progress(value, count_of_data):
+    print('{0} of {1}'.format(value, count_of_data), end = '\r')
 
 def count_entry(word, dictionary):
     '''Подсчитывает количество вхождений слова word в словарь dictionary'''
@@ -27,6 +32,33 @@ def make_markov(order, data):
             markov_model[window] = dict()
         count_entry(word, markov_model[window])
     return markov_model
+
+def make_markov_db(order, data):
+    '''Создаёт структуру для цепи Маркова в базе данных,
+    order - порядок цепи Маркова, 
+    data - список входных слов'''
+
+    name_db = 'markovdb_order' + str(order) 
+    if not os.path.exists(name_db):
+        print("Not found BD in current directory.")
+        print("Create DB ", name_db, " in current directory")
+        create_db(order)
+
+    conn = sqlite3.connect(name_db)
+    print("In progress ", str(len(data)-order), " words.")
+
+    for i in range(0, len(data)-order):
+        window = ' '.join(data[i:i+order])
+        #window - "окно" значений в звене цепи Маркова
+        word = data[i + order]
+        #word - слово, для которого будет подсчитана частота использования с данным "окном"
+        window_id = input_db(conn, 'window', window)
+        word_id = input_db(conn, 'word', word)
+        window_word_id = input_window_word(conn, window_id, word_id)
+        show_progress(i, len(data))
+
+    conn.close()
+    return True
 
 def get_word(markov_model, window):
     '''Получает следующее слово для предложения'''
@@ -107,11 +139,12 @@ def generate_markov(markov_model, order, window, number_of_words=100):
 
 lines = gen_lines('podrostki.txt')
 tokens = gen_tokens(lines)
-str = []
+data = []
 for a in tokens:
-    str.append(a)
+    data.append(a)
 
-mark = make_markov(3, str)
-window, d = random.choice(list(mark.items()))
-print(window)
-print(generate_markov(mark, 3, window))
+#mark = make_markov(3, data)
+make_markov_db(3, data)
+#window, d = random.choice(list(mark.items()))
+#print(window)
+#print(generate_markov(mark, 3, window))
