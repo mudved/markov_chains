@@ -2,7 +2,7 @@ import sqlite3
 
 def create_db_parser():
 
-    name_db = 'parserDB'
+    name_db = 'parser_data\parserDB'
     conn = sqlite3.connect(name_db)
     cursor = conn.cursor()
 
@@ -72,7 +72,7 @@ def create_db_parser():
     conn.close()
 
 def input_db(conn, table_name, options:dict):
-    '''Функция для добавления значения в таблицу. 
+    '''Функция для добавления значения в таблицу БД. 
     table_name - имя таблицы для добавления записи,
     options - словарь входных значений в формате {'имя колонки таблицы':'значение'}'''
 

@@ -142,14 +142,14 @@ def generate_markov(markov_model, order, window, number_of_words=100):
 def save_markov(data):
     '''Сохраняет модель Маркова в файл data.pickle'''
 
-    with open('data.pickle', 'wb') as f:
+    with open('generator_data\data.pickle', 'wb') as f:
         pickle.dump(data, f)
     print("Data is save in pickle")
 
 def load_markov():
     '''Загружает модель Маркова из файла data.pickle'''
 
-    with open('data.pickle', 'rb') as f:
+    with open('generator_data\data.pickle', 'rb') as f:
         data = pickle.load(f)
     print("Data load from pickle")
     return data
@@ -169,7 +169,7 @@ def read_file(filename):
     return data
 
 if __name__=='__main__':
-    data = read_file('podrostki.txt')
+    data = read_file('generator_data\podrostki.txt')
     markov_model = dict()
     mark = make_markov(3, data, markov_model)
     save_markov(mark)
