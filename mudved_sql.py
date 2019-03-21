@@ -99,7 +99,72 @@ def create_db(order=3):
     cursor.close()
     conn.close()
 
+def create_db_parser():
+
+    name_db = 'parserDB'
+    conn = sqlite3.connect(name_db)
+    cursor = conn.cursor()
+
+    sql = """
+    CREATE TABLE tag(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    tag TEXT NOT NULL UNIQUE);
+
+    CREATE TABLE category(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL UNIQUE);
+
+    CREATE TABLE image(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    image TEXT NOT NULL UNIQUE);
+
+    CREATE TABLE donor(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    donor TEXT NOT NULL UNIQUE);
+
+    CREATE TABLE key(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    key TEXT NOT NULL UNIQUE);
+
+    CREATE TABLE content(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    cat_id INTEGER NOT NULL REFERENCES category(id),
+    donor_id INTEGER NOT NULL REFERENCES donor(id),
+    title TEXT NOT NULL,
+    description TEXT,
+    h1 TEXT,
+    content TEXT);
+
+    CREATE TABLE content_tag(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    content_id INTEGER NOT NULL REFERENCES content(id),
+    tag_id INTEGER NOT NULL REFERENCES tag(id));
+
+    CREATE TABLE content_image(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    content_id INTEGER NOT NULL REFERENCES content(id),
+    image_id INTEGER NOT NULL REFERENCES image(id));
+
+    CREATE TABLE content_key(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    content_id INTEGER NOT NULL REFERENCES content(id),
+    key_id INTEGER NOT NULL REFERENCES key(id));"""
+     
+    try:
+        cursor.executescript(sql)
+    except sqlite3.DatabaseError as err:
+        print("Error: ", err)
+    else:
+        print("DB 'parserDB' is created")
+        conn.commit()
+
+    cursor.close()
+    conn.close()
+
 def input_db(conn, table_name, string):
+    '''Функция для добавления значения в таблицу. Имя поля должно быть = имя таблицы и быть 
+    единственным полем кроме поля ID'''
+
     cursor = conn.cursor()
     sql = "SELECT id FROM {0} WHERE {0}='{1}'".format(table_name, string)
 
