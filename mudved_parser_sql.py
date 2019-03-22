@@ -31,6 +31,10 @@ def create_db_parser():
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     key TEXT NOT NULL UNIQUE);
 
+    CREATE TABLE video(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    video TEXT NOT NULL UNIQUE);
+
     CREATE TABLE content(
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     cat_id INTEGER NOT NULL REFERENCES category(id),
@@ -54,6 +58,11 @@ def create_db_parser():
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     content_id INTEGER NOT NULL REFERENCES content(id),
     donor_id INTEGER NOT NULL REFERENCES donor(id));
+
+    CREATE TABLE content_video(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    content_id INTEGER NOT NULL REFERENCES content(id),
+    video_id INTEGER NOT NULL REFERENCES video(id));
 
     CREATE TABLE content_key(
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -118,7 +127,7 @@ def input_db(conn, table_name, options:dict):
 
 if __name__ == '__main__':
     #create_db_parser()
-    conn = sqlite3.connect('parserDB')
+    conn = sqlite3.connect(r'parser_data\parserDB')
     options = {'tag':'tag_two'}
     id_tag = input_db(conn, 'tag', options)
     print(id_tag)
@@ -143,6 +152,10 @@ if __name__ == '__main__':
     id_donor= input_db(conn, 'donor', options)
     print(id_donor)
 
+    options = {'video':'video'}
+    id_video= input_db(conn, 'video', options)
+    print(id_video)
+
     options = {'cat_id':id_category, 'url_id':id_url, 'title':'First title', 'description':'desc-desc', 'h1':'zagolovok', 'content':'first content text'}
     id_content= input_db(conn, 'content', options)
     print(id_content)
@@ -158,6 +171,10 @@ if __name__ == '__main__':
     options = {'content_id':id_content, 'key_id':id_key}
     id_content_key= input_db(conn, 'content_key', options)
     print(id_content_key)
+
+    options = {'content_id':id_content, 'video_id':id_video}
+    id_content_video= input_db(conn, 'content_video', options)
+    print(id_content_video)
 
     options = {'content_id':id_content, 'donor_id':id_donor}
     id_content_donor= input_db(conn, 'content_donor', options)
