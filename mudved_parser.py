@@ -51,6 +51,30 @@ def parser(url, donor, use_proxy=False):
 
     return result
 
+def spider_index(site_url):
+    index_html = get_html(site_url)
+    index_soup = BeautifulSoup(index_html, 'lxml')
+    cats = index_soup.find('div', class_="sidebar_menu side_block").find_all('a')
+    for cat in cats:
+        cat_url = site_url + cat['href']
+        print('START parsing: ', cat_url)
+        spider_cat_page(cat_url)
+
+def spider_cat_page(cat_url):
+        for i in range(180, 200):
+            cat_page_url = cat_url + 'page/' + str(i) + '/'
+            cat_page_html = get_html(cat_page_url)
+            cat_page_soup = BeautifulSoup(cat_page_html, 'lxml')
+            if not cat_page_soup.find('h1', class_="post_title") is None:
+                print("END parsing cat: ", cat_url)
+                break
+            print("Parsing url: ",cat_page_url)
+            page_urls = cat_page_soup.find_all('a', class_="short_post post_img")
+            for page_url in page_urls:
+                url = page_url['href']
+
+
+
 def get_proxylist():
     '''Парсит список прокси и портов и записывает в файл
     возвращает True, если удалось записать хотя бы 1 прокси'''
@@ -77,25 +101,26 @@ def get_proxylist():
     return not first
 
 def main():
-    if True or get_proxylist():
-        print("Proxy parsing completed.")
-        useragents = open(r'parser_data\useragents.txt').read().split('\n')
-        proxies = open(r'parser_data\proxies.txt').read().split('\n')
-        for i in range(10):
-            proxy = {'http': 'http://' + choice(proxies)}
-            useragent = {'User-Agent': choice(useragents)}
-            try:
-                html = get_html('http://sitespy.ru/my-ip', useragent, proxy)
-            except:
-                continue
-            else:
-                break
-    else:
-        print("Proxy parsing not completed.")
-        html = get_html('http://sitespy.ru/my-ip')
-    get_ip(html)
-    result = parser('http://pornolomka.me/8285-pizda-krupno-posle-seksa.html', 'pornolomka.me')
-    print(result)
+    #if True or get_proxylist():
+    #    print("Proxy parsing completed.")
+    #    useragents = open(r'parser_data\useragents.txt').read().split('\n')
+    #    proxies = open(r'parser_data\proxies.txt').read().split('\n')
+    #    for i in range(10):
+    #        proxy = {'http': 'http://' + choice(proxies)}
+    #        useragent = {'User-Agent': choice(useragents)}
+    #        try:
+    #            html = get_html('http://sitespy.ru/my-ip', useragent, proxy)
+    #        except:
+    #            continue
+    #        else:
+    #            break
+    #else:
+    #    print("Proxy parsing not completed.")
+    #    html = get_html('http://sitespy.ru/my-ip')
+    #get_ip(html)
+    #result = parser('http://pornolomka.me/8285-pizda-krupno-posle-seksa.html', 'pornolomka.me')
+    #print(result)
+    spider_index('http://pornolomka.me')
 
 
 if __name__ == '__main__':
