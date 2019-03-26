@@ -3,6 +3,7 @@ import os
 from random import choice
 from bs4 import BeautifulSoup
 from mudved_parser_sql import *
+from multiprocessing import Pool
 
 def get_html(url, useragent=None, proxy=None):
     '''Получает текст html страницы по url-адресу'''
@@ -105,7 +106,7 @@ def get_cats_urls(index_url):
 
     return cats_urls
 
-def get_cat_pages(cat_url, donor):
+def get_cat_pages(cat_url):
     '''Парсит страницы категорий и возвращает список ссылок на все страницы категории'''
 
     pages_urls = []
@@ -129,6 +130,11 @@ def get_cat_pages(cat_url, donor):
 
     return pages_urls
 
+def make_all(url):
+    pass
+
+
+
 def parser(site_url):
     '''Главный парсер'''
 
@@ -136,27 +142,31 @@ def parser(site_url):
         print('DB parserDB is not exist')
         create_db_parser()
 
-    conn = sqlite3.connect(r'parser_data\parserDB')
+    #conn = sqlite3.connect(r'parser_data\parserDB')
 
     cats_urls = get_cats_urls(site_url)
     print('There are ', str(len(cats_urls)), ' CATEGORIES in site ', site_url)
     
     for cat_url in cats_urls:
         print('START parsing CATEGORY: ', cat_url)
-        pages_urls = get_cat_pages(cat_url, site_url)
+        pages_urls = get_cat_pages(cat_url)
         print('There are ', str(len(pages_urls)), ' PAGES in CATEGORY ', cat_url)
 
         for page_url in pages_urls:
             print('parsing PAGE url: ', page_url)
             result = parser_page(page_url, site_url)
-            write_in_db(conn, result, page_url, site_url)
+            write_in_db(result, page_url, site_url)
+            with open('generator_data\parsingdata.txt', 'a') as file:
+                file.write(result['content'])
 
-    conn.close()
+    #conn.close()
     print('Parsing site ', site_url, ' is completed')
     return True
 
-def write_in_db(conn, result, url, donor):
+def write_in_db(result, url, donor):
     '''Записывает в БД результаты парсинга страницы'''
+
+    conn = sqlite3.connect(r'parser_data\parserDB')
 
     options = {'url':url}
     id_url= input_db(conn, 'url', options)
@@ -198,6 +208,8 @@ def write_in_db(conn, result, url, donor):
         options = {'content_id':id_content, 'tag_id':id_tag}
         id_content_tag = input_db(conn, 'content_tag', options)
     print('Write in DB ***************** OK')
+
+    conn.close()
     
 def get_proxylist():
     '''Парсит список прокси и портов и записывает в файл
