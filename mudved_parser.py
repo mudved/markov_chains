@@ -1,6 +1,8 @@
 import requests
+import os
 from random import choice
 from bs4 import BeautifulSoup
+from mudved_parser_sql import *
 
 def get_html(url, useragent=None, proxy=None):
     '''Получает текст html страницы по url-адресу'''
@@ -52,29 +54,86 @@ def parser(url, donor, use_proxy=False):
     return result
 
 def spider_index(site_url):
+
+    if not os.path.exists('parser_data\parserDB'):
+        print('DB parserDB is not exist')
+        create_db_parser()
+
+    conn = sqlite3.connect(r'parser_data\parserDB')
+
     index_html = get_html(site_url)
     index_soup = BeautifulSoup(index_html, 'lxml')
     cats = index_soup.find('div', class_="sidebar_menu side_block").find_all('a')
     for cat in cats:
         cat_url = site_url + cat['href']
         print('START parsing: ', cat_url)
-        spider_cat_page(cat_url)
+        spider_cat_page(cat_url, site_url, conn)
 
-def spider_cat_page(cat_url):
-        for i in range(180, 200):
-            cat_page_url = cat_url + 'page/' + str(i) + '/'
-            cat_page_html = get_html(cat_page_url)
-            cat_page_soup = BeautifulSoup(cat_page_html, 'lxml')
-            if not cat_page_soup.find('h1', class_="post_title") is None:
-                print("END parsing cat: ", cat_url)
-                break
-            print("Parsing url: ",cat_page_url)
-            page_urls = cat_page_soup.find_all('a', class_="short_post post_img")
-            for page_url in page_urls:
-                url = page_url['href']
+    conn.close()
+    print('Parsing site ', site_url, ' is completed')
+
+def spider_cat_page(cat_url, donor, conn):
+    '''Парсит страницы категорий и страницы с контентом'''
+
+    for i in range(1, 500):
+        cat_page_url = cat_url + 'page/' + str(i) + '/'
+        cat_page_html = get_html(cat_page_url)
+        cat_page_soup = BeautifulSoup(cat_page_html, 'lxml')
+        if not cat_page_soup.find('h1', class_="post_title") is None:
+            print("END parsing cat: ", cat_url)
+            break
+        print("Parsing url: ", cat_page_url)
+        page_urls = cat_page_soup.find_all('a', class_="short_post post_img")
+        for page_url in page_urls:
+            url = page_url['href']
+            result = parser(url, donor)
+            write_in_db(conn, result, url, donor)
 
 
+def write_in_db(conn, result, url, donor):
+    '''Записывает в БД результаты парсинга страницы'''
 
+    options = {'url':url}
+    id_url= input_db(conn, 'url', options)
+
+    options = {'category':result['category']}
+    id_category= input_db(conn, 'category', options)
+
+    options = {'donor':donor}
+    id_donor= input_db(conn, 'donor', options)
+
+    options = {'image':result['image']}
+    id_image= input_db(conn, 'image', options)
+
+    options = {'video':result['video']}
+    id_video= input_db(conn, 'video', options)
+
+    options = {'key':result['h1']}
+    id_key= input_db(conn, 'key', options)
+
+    options = {'cat_id':id_category, 'url_id':id_url, 'title':result['title'], 'description':result['description'], 'h1':result['h1'], 'content':result['content']}
+    id_content= input_db(conn, 'content', options)
+
+    options = {'content_id':id_content, 'donor_id':id_donor}
+    id_content_donor= input_db(conn, 'content_donor', options)
+    
+    options = {'content_id':id_content, 'image_id':id_image}
+    id_content_image= input_db(conn, 'content_image', options)
+
+    options = {'content_id':id_content, 'key_id':id_key}
+    id_content_key= input_db(conn, 'content_key', options)
+
+    options = {'content_id':id_content, 'video_id':id_video}
+    id_content_video= input_db(conn, 'content_video', options)
+
+    for tag in result['tags']:
+        options = {'tag':tag}
+        id_tag = input_db(conn, 'tag', options)
+        
+        options = {'content_id':id_content, 'tag_id':id_tag}
+        id_content_tag = input_db(conn, 'content_tag', options)
+    print('Write in DB ***************** OK')
+    
 def get_proxylist():
     '''Парсит список прокси и портов и записывает в файл
     возвращает True, если удалось записать хотя бы 1 прокси'''
