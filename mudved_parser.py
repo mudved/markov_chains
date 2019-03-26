@@ -17,7 +17,7 @@ def get_ip(html):
     print(ip)
     print(ua)
 
-def parser(url, donor, use_proxy=False):
+def parser_page(url, donor, use_proxy=False):
     '''Функция для парсинга страниц доноров'''
 
     print("Start parsing: ", url)
@@ -41,19 +41,96 @@ def parser(url, donor, use_proxy=False):
 
     soup = BeautifulSoup(html, 'lxml')
     
-    title= soup.find('title').text.strip()
-    description = soup.find('meta', {"name":"description"})['content']
-    video = soup.find('meta', {"property":"og:video"})['content']
-    image = soup.find('meta', {"property":"og:image"})['content']
-    h1 = soup.find('span', id = "news-title").text.strip()
-    content = soup.find('div', class_="post_content cf").text.strip()
-    category = soup.find_all('span', itemprop="title")[1].text.strip()
-    tags = soup.find('meta', {"name":"news_keywords"})['content'].split(',')
+    try:
+        title= soup.find('title').text.strip()
+    except:
+        title = ''
+        print("Title not found")
+    try:
+        description = soup.find('meta', {"name":"description"})['content']
+    except:
+        description = ''
+        print("Description not found")
+    try:
+        video = soup.find('meta', {"property":"og:video"})['content']
+    except:
+        video = ''
+        print("Video not found")
+    try:
+        image = soup.find('meta', {"property":"og:image"})['content']
+    except:
+        image = ''
+        print("Image not found")
+    try:
+        h1 = soup.find('span', id = "news-title").text.strip()
+    except:
+        h1 = ''
+        print("H1 not found")
+    try:
+        content = soup.find('div', class_="post_content cf").text.strip()
+    except:
+        content = ''
+        print("Content not found")
+    try:
+        category = soup.find_all('span', itemprop="title")[1].text.strip()
+    except:
+        category = ''
+        print("Category not found")
+    try:
+        tags = soup.find('meta', {"name":"news_keywords"})['content'].split(',')
+    except:
+        tags = []
+        print("Tags not found")
+
     result = {'h1':h1, 'title':title, 'description':description, 'video':video, 'image':image, 'content':content, 'category':category, 'tags':tags}
 
     return result
 
-def spider_index(site_url):
+
+def get_cats_urls(index_url):
+    '''Получает url-ы категорий сайта'''
+
+    index_html = get_html(index_url)
+    index_soup = BeautifulSoup(index_html, 'lxml')
+    try:
+        cats = index_soup.find('div', class_="sidebar_menu side_block").find_all('a')
+    except:
+        print("Error cats parsing")
+
+    cats_urls = []
+
+    for cat in cats:
+        cat_url = index_url + cat['href']
+        cats_urls.append(cat_url)
+
+    return cats_urls
+
+def get_cat_pages(cat_url, donor):
+    '''Парсит страницы категорий и возвращает список ссылок на все страницы категории'''
+
+    pages_urls = []
+
+    for i in range(1, 500):
+        cat_page_url = cat_url + 'page/' + str(i) + '/'
+        cat_page_html = get_html(cat_page_url)
+        cat_page_soup = BeautifulSoup(cat_page_html, 'lxml')
+        if not cat_page_soup.find('h1', class_="post_title") is None:
+            print("END parsing CATEGORY: ", cat_url)
+            break
+        print("Parsing page №", i)
+        try:
+            urls_on_page = cat_page_soup.find_all('a', class_="short_post post_img")
+        except:
+            print("Error parsing page ", cat_page_url)
+
+        for url_page in urls_on_page:
+            url = url_page['href']
+            pages_urls.append(url)
+
+    return pages_urls
+
+def parser(site_url):
+    '''Главный парсер'''
 
     if not os.path.exists('parser_data\parserDB'):
         print('DB parserDB is not exist')
@@ -61,34 +138,22 @@ def spider_index(site_url):
 
     conn = sqlite3.connect(r'parser_data\parserDB')
 
-    index_html = get_html(site_url)
-    index_soup = BeautifulSoup(index_html, 'lxml')
-    cats = index_soup.find('div', class_="sidebar_menu side_block").find_all('a')
-    for cat in cats:
-        cat_url = site_url + cat['href']
-        print('START parsing: ', cat_url)
-        spider_cat_page(cat_url, site_url, conn)
+    cats_urls = get_cats_urls(site_url)
+    print('There are ', str(len(cats_urls)), ' CATEGORIES in site ', site_url)
+    
+    for cat_url in cats_urls:
+        print('START parsing CATEGORY: ', cat_url)
+        pages_urls = get_cat_pages(cat_url, site_url)
+        print('There are ', str(len(pages_urls)), ' PAGES in CATEGORY ', cat_url)
+
+        for page_url in pages_urls:
+            print('parsing PAGE url: ', page_url)
+            result = parser_page(page_url, site_url)
+            write_in_db(conn, result, page_url, site_url)
 
     conn.close()
     print('Parsing site ', site_url, ' is completed')
-
-def spider_cat_page(cat_url, donor, conn):
-    '''Парсит страницы категорий и страницы с контентом'''
-
-    for i in range(1, 500):
-        cat_page_url = cat_url + 'page/' + str(i) + '/'
-        cat_page_html = get_html(cat_page_url)
-        cat_page_soup = BeautifulSoup(cat_page_html, 'lxml')
-        if not cat_page_soup.find('h1', class_="post_title") is None:
-            print("END parsing cat: ", cat_url)
-            break
-        print("Parsing url: ", cat_page_url)
-        page_urls = cat_page_soup.find_all('a', class_="short_post post_img")
-        for page_url in page_urls:
-            url = page_url['href']
-            result = parser(url, donor)
-            write_in_db(conn, result, url, donor)
-
+    return True
 
 def write_in_db(conn, result, url, donor):
     '''Записывает в БД результаты парсинга страницы'''
@@ -179,7 +244,7 @@ def main():
     #get_ip(html)
     #result = parser('http://pornolomka.me/8285-pizda-krupno-posle-seksa.html', 'pornolomka.me')
     #print(result)
-    spider_index('http://pornolomka.me')
+    parser('http://pornolomka.me')
 
 
 if __name__ == '__main__':
