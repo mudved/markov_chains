@@ -168,8 +168,9 @@ def read_file(filename):
         data.append(a)
     return data
 
-if __name__=='__main__':
-    data = read_file('generator_data\podrostki.txt')
+def main():
+
+    data = read_file('generator_data\parsingdata.txt')
     markov_model = dict()
     mark = make_markov(3, data, markov_model)
     save_markov(mark)
@@ -180,3 +181,7 @@ if __name__=='__main__':
     print(generate_markov(mark, 3, window))
 
     #make_markov_db(3, data)
+
+
+if __name__=='__main__':
+    main()

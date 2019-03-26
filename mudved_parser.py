@@ -133,8 +133,6 @@ def get_cat_pages(cat_url):
 def make_all(url):
     pass
 
-
-
 def parser(site_url):
     '''Главный парсер'''
 
