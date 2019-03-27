@@ -1,4 +1,6 @@
 import sqlite3
+import time
+import random
 
 def create_db_parser():
 
@@ -102,22 +104,28 @@ def input_db(conn, table_name, options:dict):
 
     sql = "SELECT id FROM {0} WHERE {1}".format(table_name, string)
 
-    try:    
-        cursor.execute(sql)
-        string_id = cursor.fetchone()
-    except sqlite3.DatabaseError as err:
-        print("input_db Error: ", err)
+    while True:
+        try:    
+            cursor.execute(sql)
+            string_id = cursor.fetchone()
+            break
+        except sqlite3.DatabaseError as err:
+            print("input_db Error: ", err)
+            time.sleep(random.randint(1,5))
 
     if string_id == None:
         sql = "INSERT OR IGNORE INTO {0} ({1}) VALUES ({2})".format(table_name, string_rows, string_options) 
 
-        try:
-            cursor.execute(sql)
-        except sqlite3.DatabaseError as err:
-            print("input_db write Error: ", err)
-        else:
-            conn.commit()
-            string_id = cursor.lastrowid
+        while True:
+            try:
+                cursor.execute(sql)
+            except sqlite3.DatabaseError as err:
+                print("input_db write Error: ", err)
+                time.sleep(random.randint(1,5))
+            else:
+                conn.commit()
+                string_id = cursor.lastrowid
+                break
     else:
         string_id = string_id[0]
 

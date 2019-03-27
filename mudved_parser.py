@@ -1,5 +1,7 @@
 import requests
 import os
+import time
+import random
 from random import choice
 from bs4 import BeautifulSoup
 from mudved_parser_sql import *
@@ -145,7 +147,8 @@ def make_all(page_url):
     if not result:
         return False
 
-    #write_in_db(result, page_url)
+    time.sleep(random.randint(1,5))
+    write_in_db(result, page_url)
     with open('generator_data\parsingdata.txt', 'a') as file:
         file.write(result['content']+'\n')
 
@@ -158,8 +161,6 @@ def multy_parser(site_url):
         print('DB parserDB is not exist')
         create_db_parser()
 
-<<<<<<< HEAD
-
     cats_urls = get_cats_urls(site_url)
     print('There are ', str(len(cats_urls)), ' CATEGORIES in site ', site_url)
     
@@ -170,15 +171,12 @@ def multy_parser(site_url):
         with open(r'parser_data\pages_urls.txt', 'a') as file:
             file.write('\n'.join(pages_urls))
 
-
-        with Pool(40) as p:
+        with Pool(20) as p:
             p.map(make_all, pages_urls)
 
     print('Parsing site ', site_url, ' is completed')
     return True
 
-=======
->>>>>>> ebc3dcd925b16ebcffc94722150709d123f5e235
 def parser(site_url):
     '''Главный парсер'''
 
@@ -292,42 +290,7 @@ def get_proxylist():
 
     return not first
 
-def get_proxylist_1():
-    '''Парсит список прокси и портов и записывает в файл
-    возвращает True, если удалось записать хотя бы 1 прокси'''
-
-    print("Start proxy parsing")
-    url = 'http://free-proxy.cz/ru/proxylist/country/all/http/ping/level2'
-    html = get_html(url)
-    soup = BeautifulSoup(html, 'lxml')
-
-    with open(r'parser_data\proxies.txt', 'w') as f:
-        trs = soup.find('table', id="proxy_list").findAll('tr')
-        for tr in trs:
-            print(tr)
-
-    return True
-
 def main():
-    #if True or get_proxylist():
-    #    print("Proxy parsing completed.")
-    #    useragents = open(r'parser_data\useragents.txt').read().split('\n')
-    #    proxies = open(r'parser_data\proxies.txt').read().split('\n')
-    #    for i in range(10):
-    #        proxy = {'http': 'http://' + choice(proxies)}
-    #        useragent = {'User-Agent': choice(useragents)}
-    #        try:
-    #            html = get_html('http://sitespy.ru/my-ip', useragent, proxy)
-    #        except:
-    #            continue
-    #        else:
-    #            break
-    #else:
-    #    print("Proxy parsing not completed.")
-    #    html = get_html('http://sitespy.ru/my-ip')
-    #get_ip(html)
-    #result = parser('http://pornolomka.me/8285-pizda-krupno-posle-seksa.html', 'pornolomka.me')
-    #print(result)
 
     #parser('http://pornolomka.me')
     multy_parser('http://pornolomka.me')
