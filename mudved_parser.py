@@ -158,6 +158,7 @@ def multy_parser(site_url):
         print('DB parserDB is not exist')
         create_db_parser()
 
+<<<<<<< HEAD
 
     cats_urls = get_cats_urls(site_url)
     print('There are ', str(len(cats_urls)), ' CATEGORIES in site ', site_url)
@@ -176,6 +177,8 @@ def multy_parser(site_url):
     print('Parsing site ', site_url, ' is completed')
     return True
 
+=======
+>>>>>>> ebc3dcd925b16ebcffc94722150709d123f5e235
 def parser(site_url):
     '''Главный парсер'''
 
