@@ -8,7 +8,11 @@ from multiprocessing import Pool
 def get_html(url, useragent=None, proxy=None):
     '''Получает текст html страницы по url-адресу'''
 
-    r = requests.get(url, headers=useragent, proxies=proxy)
+    try:
+        r = requests.get(url, headers=useragent, proxies=proxy)
+    except:
+        print("Error get html for url: ", url)
+        return False
     return r.text
 
 def get_ip(html):
@@ -18,12 +22,11 @@ def get_ip(html):
     print(ip)
     print(ua)
 
-def parser_page(url, donor, use_proxy=False):
+def parser_page(url, use_proxy=False):
     '''Функция для парсинга страниц доноров'''
 
     print("Start parsing: ", url)
-    if use_proxy and get_proxylist():
-        print("Proxy parsing completed.")
+    if use_proxy:
         useragents = open(r'parser_data\useragents.txt').read().split('\n')
         proxies = open(r'parser_data\proxies.txt').read().split('\n')
         for i in range(10):
@@ -39,6 +42,10 @@ def parser_page(url, donor, use_proxy=False):
     else:
         print("Proxy not use.")
         html = get_html(url)
+
+    if not html:
+        print("Error page parsing")
+        return False
 
     soup = BeautifulSoup(html, 'lxml')
     
@@ -87,7 +94,6 @@ def parser_page(url, donor, use_proxy=False):
 
     return result
 
-
 def get_cats_urls(index_url):
     '''Получает url-ы категорий сайта'''
 
@@ -130,10 +136,45 @@ def get_cat_pages(cat_url):
 
     return pages_urls
 
-def make_all(url):
-    pass
+def make_all(page_url):
+    '''Функция для запуска парсинга в несколько потоков'''
+
+    print('parsing PAGE url: ', page_url)
+    result = parser_page(page_url, False)
+
+    if not result:
+        return False
+
+    #write_in_db(result, page_url)
+    with open('generator_data\parsingdata.txt', 'a') as file:
+        file.write(result['content']+'\n')
+
+    return True
+
+def multy_parser(site_url):
+    '''Мульти-парсер в несколько потоков'''
+
+    if not os.path.exists('parser_data\parserDB'):
+        print('DB parserDB is not exist')
+        create_db_parser()
 
 
+    cats_urls = get_cats_urls(site_url)
+    print('There are ', str(len(cats_urls)), ' CATEGORIES in site ', site_url)
+    
+    for cat_url in cats_urls:
+        print('START parsing CATEGORY: ', cat_url)
+        pages_urls = get_cat_pages(cat_url)
+        print('There are ', str(len(pages_urls)), ' PAGES in CATEGORY ', cat_url)
+        with open(r'parser_data\pages_urls.txt', 'a') as file:
+            file.write('\n'.join(pages_urls))
+
+
+        with Pool(40) as p:
+            p.map(make_all, pages_urls)
+
+    print('Parsing site ', site_url, ' is completed')
+    return True
 
 def parser(site_url):
     '''Главный парсер'''
@@ -141,8 +182,6 @@ def parser(site_url):
     if not os.path.exists('parser_data\parserDB'):
         print('DB parserDB is not exist')
         create_db_parser()
-
-    #conn = sqlite3.connect(r'parser_data\parserDB')
 
     cats_urls = get_cats_urls(site_url)
     print('There are ', str(len(cats_urls)), ' CATEGORIES in site ', site_url)
@@ -152,19 +191,33 @@ def parser(site_url):
         pages_urls = get_cat_pages(cat_url)
         print('There are ', str(len(pages_urls)), ' PAGES in CATEGORY ', cat_url)
 
+        error_count = 0
         for page_url in pages_urls:
             print('parsing PAGE url: ', page_url)
-            result = parser_page(page_url, site_url)
-            write_in_db(result, page_url, site_url)
-            with open('generator_data\parsingdata.txt', 'a') as file:
-                file.write(result['content'])
+            result = parser_page(page_url, True)
 
-    #conn.close()
+            if not result:
+                error_count += 1
+                if error_count > 5:                  #Если подряд идут 5 ошибок 
+                    print("STOP parsing")
+                    return False
+                continue
+
+            error_count = 0
+            write_in_db(result, page_url)
+            with open('generator_data\parsingdata.txt', 'a') as file:
+                file.write(result['content']+'\n')
+
     print('Parsing site ', site_url, ' is completed')
     return True
 
-def write_in_db(result, url, donor):
+def write_in_db(result, url):
     '''Записывает в БД результаты парсинга страницы'''
+
+    temp = url.split('//')
+    protokol = temp[0]
+    domain = temp[1].split('/')[0]
+    donor = protokol + '//' + domain + '/'
 
     conn = sqlite3.connect(r'parser_data\parserDB')
 
@@ -236,6 +289,22 @@ def get_proxylist():
 
     return not first
 
+def get_proxylist_1():
+    '''Парсит список прокси и портов и записывает в файл
+    возвращает True, если удалось записать хотя бы 1 прокси'''
+
+    print("Start proxy parsing")
+    url = 'http://free-proxy.cz/ru/proxylist/country/all/http/ping/level2'
+    html = get_html(url)
+    soup = BeautifulSoup(html, 'lxml')
+
+    with open(r'parser_data\proxies.txt', 'w') as f:
+        trs = soup.find('table', id="proxy_list").findAll('tr')
+        for tr in trs:
+            print(tr)
+
+    return True
+
 def main():
     #if True or get_proxylist():
     #    print("Proxy parsing completed.")
@@ -256,8 +325,10 @@ def main():
     #get_ip(html)
     #result = parser('http://pornolomka.me/8285-pizda-krupno-posle-seksa.html', 'pornolomka.me')
     #print(result)
-    parser('http://pornolomka.me')
 
+    #parser('http://pornolomka.me')
+    multy_parser('http://pornolomka.me')
 
 if __name__ == '__main__':
     main()
+
