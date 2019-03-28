@@ -102,9 +102,14 @@ def get_cats_urls(index_url):
     index_html = get_html(index_url)
     index_soup = BeautifulSoup(index_html, 'lxml')
     try:
-        cats = index_soup.find('div', class_="sidebar_menu side_block").find_all('a')
+        if index_url == 'http://pornolomka.me' or index_url == 'https://www.pornolomka.info':
+            cats = index_soup.find('div', class_="sidebar_menu side_block").find_all('a')
+        elif index_url == 'https://www.poimel.cc':
+            cats = index_soup.find('div', class_="left-mnu").find_all('a')
+
     except:
         print("Error cats parsing")
+        return False
 
     cats_urls = []
 
@@ -131,6 +136,7 @@ def get_cat_pages(cat_url):
             urls_on_page = cat_page_soup.find_all('a', class_="short_post post_img")
         except:
             print("Error parsing page ", cat_page_url)
+            return False
 
         for url_page in urls_on_page:
             url = url_page['href']
@@ -162,11 +168,17 @@ def multy_parser(site_url):
         create_db_parser()
 
     cats_urls = get_cats_urls(site_url)
+    if not cats_urls:
+        return False
+
     print('There are ', str(len(cats_urls)), ' CATEGORIES in site ', site_url)
     
     for cat_url in cats_urls:
         print('START parsing CATEGORY: ', cat_url)
         pages_urls = get_cat_pages(cat_url)
+        if not pages_urls:
+            return False
+
         print('There are ', str(len(pages_urls)), ' PAGES in CATEGORY ', cat_url)
         with open(r'parser_data\pages_urls.txt', 'a') as file:
             file.write('\n'.join(pages_urls))
@@ -185,11 +197,17 @@ def parser(site_url):
         create_db_parser()
 
     cats_urls = get_cats_urls(site_url)
+    if not cats_urls:
+        return False
+
     print('There are ', str(len(cats_urls)), ' CATEGORIES in site ', site_url)
     
     for cat_url in cats_urls:
         print('START parsing CATEGORY: ', cat_url)
         pages_urls = get_cat_pages(cat_url)
+        if not pages_urls:
+            return False
+
         print('There are ', str(len(pages_urls)), ' PAGES in CATEGORY ', cat_url)
 
         error_count = 0
@@ -293,7 +311,10 @@ def get_proxylist():
 def main():
 
     #parser('http://pornolomka.me')
-    multy_parser('http://pornolomka.me')
+    #multy_parser('http://pornolomka.me')
+    #res = parser('https://www.poimel.cc')
+    res = parser('https://www.pornolomka.info')
+    print(res)
 
 if __name__ == '__main__':
     main()
