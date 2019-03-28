@@ -1,5 +1,6 @@
 import requests
 import os
+import re
 import time
 import random
 from random import choice
@@ -53,6 +54,36 @@ def parser_page(url, use_proxy=False):
 
     soup = BeautifulSoup(html, 'lxml')
     
+    temp = url.split('//')
+    protokol = temp[0]
+    domain = temp[1].split('/')[0]
+    donor = protokol + '//' + domain + '/'
+
+    if donor == 'http://pornolomka.me/':
+        try:
+            video = soup.find('meta', {"property":"og:video"})['content']
+        except:
+            video = ''
+            print("Video not found")
+        try:
+            image = soup.find('meta', {"property":"og:image"})['content']
+        except:
+            image = ''
+            print("Image not found")
+
+    elif donor == 'https://www.pornolomka.info/':
+        try:
+            video = soup.find('div', {"class":"post_content cf"}).find("script").text
+            video = re.search(r'http.*(?="})', video)[0]
+        except:
+            video = ''
+            print("Video not found")
+        try:
+            image = soup.find('meta', {"property":"og:image"})['content']
+        except:
+            image = ''
+            print("Image not found")
+
     try:
         title= soup.find('title').text.strip()
     except:
@@ -64,22 +95,13 @@ def parser_page(url, use_proxy=False):
         description = ''
         print("Description not found")
     try:
-        video = soup.find('meta', {"property":"og:video"})['content']
-    except:
-        video = ''
-        print("Video not found")
-    try:
-        image = soup.find('meta', {"property":"og:image"})['content']
-    except:
-        image = ''
-        print("Image not found")
-    try:
         h1 = soup.find('span', id = "news-title").text.strip()
     except:
         h1 = ''
         print("H1 not found")
     try:
-        content = soup.find('div', class_="post_content cf").text.strip()
+        content = soup.find('div', class_="post_content cf").text
+        content = re.split(r'var', content)[0].strip()
     except:
         content = ''
         print("Content not found")
@@ -137,6 +159,8 @@ def get_cat_pages(cat_url):
     '''Парсит страницы категорий и возвращает список ссылок на все страницы категории'''
 
     pages_urls = []
+    with open(r'parser_data\pages_urls_parsed.txt', 'r') as file:
+        pages_urls_parsed = file.read().splitlines()
 
     for i in range(1, 500):
         cat_page_url = cat_url + 'page/' + str(i) + '/'
@@ -156,7 +180,8 @@ def get_cat_pages(cat_url):
 
         for url_page in urls_on_page:
             url = url_page['href']
-            pages_urls.append(url)
+            if url not in pages_urls_parsed:
+                pages_urls.append(url)
 
     pages_urls = list(set(pages_urls))
     return pages_urls
@@ -164,7 +189,6 @@ def get_cat_pages(cat_url):
 def make_all(page_url):
     '''Функция для запуска парсинга в несколько потоков'''
 
-    print('parsing PAGE url: ', page_url)
     result = parser_page(page_url, False)
 
     if not result:
@@ -173,12 +197,14 @@ def make_all(page_url):
     time.sleep(random.randint(1,5))
     write_in_db(result, page_url)
     with open('generator_data\parsingdata.txt', 'a') as file:
-        file.write(result['content']+'\n')
+        if result['content'] != ''
+            file.write(result['content']+'\n')
 
     return True
 
-def multy_parser(site_url):
-    '''Мульти-парсер в несколько потоков'''
+def multy_parser(site_url, streams=3):
+    '''Мульти-парсер в несколько потоков
+    streams - количество потоков парсинга страниц'''
 
     if not os.path.exists('parser_data\parserDB'):
         print('DB parserDB is not exist')
@@ -196,7 +222,8 @@ def multy_parser(site_url):
         print('START parsing CATEGORY: ', cat_url)
         cat_pages_urls = get_cat_pages(cat_url)
         if not cat_pages_urls:
-            return False
+            print("Error parsing category ", cat_url)
+            continue
 
         print('There are ', str(len(cat_pages_urls)), ' PAGES in CATEGORY ', cat_url)
         pages_urls = list(set(pages_urls + cat_pages_urls))
@@ -205,7 +232,7 @@ def multy_parser(site_url):
     with open(r'parser_data\pages_urls.txt', 'a') as file:
         file.write('\n'.join(pages_urls))
 
-    with Pool(4) as p:
+    with Pool(streams) as p:
         p.map(make_all, pages_urls)
 
     print('Parsing site ', site_url, ' is completed')
@@ -241,7 +268,6 @@ def parser(site_url):
 
     error_count = 0
     for page_url in pages_urls:
-        print('parsing PAGE url: ', page_url)
         result = parser_page(page_url, True)
 
         if not result:
@@ -344,14 +370,15 @@ def get_proxylist():
 
 def main():
 
-    res = parser('http://pornolomka.me')
+    #res = parser('http://pornolomka.me')
     #res = multy_parser('http://pornolomka.me')
+    res = multy_parser('https://www.pornolomka.info', 4)
     #res = parser('https://www.poimel.cc')
     #res = parser('https://www.pornolomka.info')
     print(res)
-    #result = parser_page('http://pornolomka.me/84-devushka-drochit-sebe-i-parnyu.html')
-    #result2 = parser_page('http://pornolomka.me/8353-vklyuchil-kameru-konchit.html')
+    #result = parser_page('https://www.pornolomka.info/11303-grudastaja-telka-drochit-ljubimym-dyldo.html')
     #print(result)
+    #result2 = parser_page('http://pornolomka.me/8352-pokazala-kak-byt-lesbiyankoy.html')
     #print(result2)
 
 if __name__ == '__main__':
