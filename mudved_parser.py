@@ -368,17 +368,118 @@ def get_proxylist():
 
     return not first
 
+def parser_page_reg(url, use_proxy=False):
+    '''Функция для парсинга страниц доноров регулярками'''
+
+    print("Start parsing (reg mode): ", url)
+    if use_proxy:
+        useragents = open(r'parser_data\useragents.txt').read().split('\n')
+        proxies = open(r'parser_data\proxies.txt').read().split('\n')
+        for i in range(10):
+            proxy = {'http': 'http://' + choice(proxies)}
+            useragent = {'User-Agent': choice(useragents)}
+            try:
+                html = get_html(url, useragent, proxy)
+            except:
+                continue
+            else:
+                print("Used proxy: ", proxy)
+                break
+    else:
+        print("Proxy not use.")
+        html = get_html(url)
+
+    if not html:
+        print("Error page parsing")
+        with open(r'parser_data\pages_urls_bad.txt', 'a') as file:
+            file.write(url +'\n')
+        return False
+    
+    soup = BeautifulSoup(html, 'lxml')
+
+    protokol = url.split('//')[0]
+    domain = url.split('//')[1].split('/')[0]
+    donor = protokol + '//' + domain + '/'
+
+    if donor == 'http://pornolomka.me/':
+
+        video_reg = r'(?<=:video" content=")\s*http.*?(?=")'
+        image_reg = r'(?<=:image" content=")\s*http.*?(?=")'
+        title_reg = r'(?<=title>)\s*.*?(?=<)'
+        description_reg = r'(?<=description" content=")\s*.*?(?=")'
+        h1_reg = r'(?<=news-title" itemprop="name">)\s*.*?(?=<)'
+        content_reg = r'(?<=itemprop="description">)\s*.*?(?=<)'
+        all_categories_reg = r'(?<=Категория:</b>).*(?=</div>)'
+        categories_reg = r'(?<=">).*?(?=</a>)'
+
+        video = re.search(video_reg, html)[0]
+        print(video)
+        image = re.search(image_reg, html)[0]
+        print(image)
+        title = re.search(title_reg, html)[0]
+        print(title)
+        description = re.search(description_reg, html)[0]
+        print(description)
+        h1 = re.search(h1_reg, html)[0]
+        print(h1)
+        content = re.search(content_reg, html)[0].strip()
+        print(content)
+        all_categories = re.search(all_categories_reg, html)[0]
+        categories = re.findall(categories_reg, all_categories)
+        print(categories)
+
+
+    elif donor == 'https://www.pornolomka.info/':
+        try:
+            video = soup.find('div', {"class":"post_content cf"}).find("script").text
+            video = re.search(r'http.*(?="})', video)[0]
+        except:
+            video = ''
+            print("Video not found")
+        try:
+            image = soup.find('meta', {"property":"og:image"})['content']
+        except:
+            image = ''
+            print("Image not found")
+
+    try:
+        categories = []
+        #tags_a = soup.findAll('div', class_='info-col1')[1].findAll('div', class_="col2-item")[2].findAll('a')
+        tags_a = soup.findAll('div', class_='info-col1')[1].findAll('div', class_="col2-item")
+        for b in tags_a:
+            temp = b.findAll('a')
+            if temp != []:
+                for temp2 in temp:
+                    cat = temp2.text.strip()
+                    categories.append(cat)
+                break
+    except:
+        categories = [] 
+        print("Category not found")
+    try:
+        tags = soup.find('meta', {"name":"news_keywords"})['content'].split(',')
+    except:
+        tags = []
+        print("Tags not found")
+
+    result = {'h1':h1, 'title':title, 'description':description, 'video':video, 'image':image, 'content':content, 'categories':categories, 'tags':tags}
+
+    with open(r'parser_data\pages_urls_parsed.txt', 'a') as file:
+        file.write(url +'\n')
+
+    return result
+
 def main():
 
     #res = parser('http://pornolomka.me')
-    res = multy_parser('http://pornolomka.me', 4)
-    res = multy_parser('https://www.pornolomka.info', 4)
+    #res = multy_parser('http://pornolomka.me', 4)
+    #res = multy_parser('https://www.pornolomka.info', 4)
     #res = parser('https://www.poimel.cc')
     #res = parser('https://www.pornolomka.info')
-    print(res)
-    #result = parser_page('https://www.pornolomka.info/11303-grudastaja-telka-drochit-ljubimym-dyldo.html')
+    #print(res)
+    #result = parser_page_reg('https://www.pornolomka.info/11303-grudastaja-telka-drochit-ljubimym-dyldo.html')
     #print(result)
-    #result2 = parser_page('http://pornolomka.me/8352-pokazala-kak-byt-lesbiyankoy.html')
+    result2 = parser_page_reg('http://pornolomka.me/8352-pokazala-kak-byt-lesbiyankoy.html')
     #print(result2)
 
 if __name__ == '__main__':
