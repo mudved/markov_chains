@@ -47,6 +47,8 @@ def parser_page(url, use_proxy=False):
 
     if not html:
         print("Error page parsing")
+        with open(r'parser_data\pages_urls_bad.txt', 'a') as file:
+            file.write(url +'\n')
         return False
 
     soup = BeautifulSoup(html, 'lxml')
@@ -99,6 +101,9 @@ def parser_page(url, use_proxy=False):
 
     result = {'h1':h1, 'title':title, 'description':description, 'video':video, 'image':image, 'content':content, 'categories':categories, 'tags':tags}
 
+    with open(r'parser_data\pages_urls_parsed.txt', 'a') as file:
+        file.write(url +'\n')
+
     return result
 
 def get_cats_urls(index_url):
@@ -133,10 +138,12 @@ def get_cat_pages(cat_url):
         cat_page_url = cat_url + 'page/' + str(i) + '/'
         cat_page_html = get_html(cat_page_url)
         cat_page_soup = BeautifulSoup(cat_page_html, 'lxml')
+
         if not cat_page_soup.find('h1', class_="post_title") is None:
             print("END parsing CATEGORY: ", cat_url)
             break
-        print("Parsing page №", i)
+
+        print("Parsing urls from page №", i, end = '\r')
         try:
             urls_on_page = cat_page_soup.find_all('a', class_="short_post post_img")
         except:
@@ -147,6 +154,7 @@ def get_cat_pages(cat_url):
             url = url_page['href']
             pages_urls.append(url)
 
+    pages_urls = list(set(pages_urls))
     return pages_urls
 
 def make_all(page_url):
@@ -178,18 +186,23 @@ def multy_parser(site_url):
 
     print('There are ', str(len(cats_urls)), ' CATEGORIES in site ', site_url)
     
+    pages_urls = []
+
     for cat_url in cats_urls:
         print('START parsing CATEGORY: ', cat_url)
-        pages_urls = get_cat_pages(cat_url)
-        if not pages_urls:
+        cat_pages_urls = get_cat_pages(cat_url)
+        if not cat_pages_urls:
             return False
 
-        print('There are ', str(len(pages_urls)), ' PAGES in CATEGORY ', cat_url)
-        with open(r'parser_data\pages_urls.txt', 'a') as file:
-            file.write('\n'.join(pages_urls))
+        print('There are ', str(len(cat_pages_urls)), ' PAGES in CATEGORY ', cat_url)
+        pages_urls = list(set(pages_urls + cat_pages_urls))
 
-        with Pool(4) as p:
-            p.map(make_all, pages_urls)
+    print('There are ', str(len(pages_urls)), ' unique PAGES in CATEGORY ', cat_url)
+    with open(r'parser_data\pages_urls.txt', 'a') as file:
+        file.write('\n'.join(pages_urls))
+
+    with Pool(4) as p:
+        p.map(make_all, pages_urls)
 
     print('Parsing site ', site_url, ' is completed')
     return True
@@ -207,30 +220,37 @@ def parser(site_url):
 
     print('There are ', str(len(cats_urls)), ' CATEGORIES in site ', site_url)
     
+    pages_urls = []
+
     for cat_url in cats_urls:
         print('START parsing CATEGORY: ', cat_url)
-        pages_urls = get_cat_pages(cat_url)
-        if not pages_urls:
+        cat_pages_urls = get_cat_pages(cat_url)
+        if not cat_pages_urls:
             return False
 
-        print('There are ', str(len(pages_urls)), ' PAGES in CATEGORY ', cat_url)
+        print('There are ', str(len(cat_pages_urls)), ' PAGES in CATEGORY ', cat_url)
+        pages_urls = list(set(pages_urls + cat_pages_urls))
+
+    print('There are ', str(len(pages_urls)), ' PAGES in CATEGORY ', cat_url)
+    with open(r'parser_data\pages_urls.txt', 'a') as file:
+        file.write('\n'.join(pages_urls))
+
+    error_count = 0
+    for page_url in pages_urls:
+        print('parsing PAGE url: ', page_url)
+        result = parser_page(page_url, True)
+
+        if not result:
+            error_count += 1
+            if error_count > 5:                  #Если подряд идут 5 ошибок 
+                print("STOP parsing")
+                return False
+            continue
 
         error_count = 0
-        for page_url in pages_urls:
-            print('parsing PAGE url: ', page_url)
-            result = parser_page(page_url, True)
-
-            if not result:
-                error_count += 1
-                if error_count > 5:                  #Если подряд идут 5 ошибок 
-                    print("STOP parsing")
-                    return False
-                continue
-
-            error_count = 0
-            write_in_db(result, page_url)
-            with open('generator_data\parsingdata.txt', 'a') as file:
-                file.write(result['content']+'\n')
+        write_in_db(result, page_url)
+        with open('generator_data\parsingdata.txt', 'a') as file:
+            file.write(result['content']+'\n')
 
     print('Parsing site ', site_url, ' is completed')
     return True
@@ -248,8 +268,6 @@ def write_in_db(result, url):
     options = {'url':url}
     id_url= input_db(conn, 'url', options)
 
-    options = {'category':result['category']}
-    id_category= input_db(conn, 'category', options)
 
     options = {'donor':donor}
     id_donor= input_db(conn, 'donor', options)
@@ -278,7 +296,9 @@ def write_in_db(result, url):
     options = {'content_id':id_content, 'video_id':id_video}
     id_content_video= input_db(conn, 'content_video', options)
 
-    for cat in result['category']:
+    for category in result['categories']:
+        options = {'category':category}
+        id_category= input_db(conn, 'category', options)
 
         options = {'content_id':id_content, 'category_id':id_category}
         id_content_category= input_db(conn, 'content_category', options)
@@ -320,13 +340,12 @@ def get_proxylist():
 
 def main():
 
-    #parser('http://pornolomka.me')
-    #multy_parser('http://pornolomka.me')
+    #res = parser('http://pornolomka.me')
+    res = multy_parser('http://pornolomka.me')
     #res = parser('https://www.poimel.cc')
     #res = parser('https://www.pornolomka.info')
-    #print(res)
-    result = parser_page('http://pornolomka.me/8352-pokazala-kak-byt-lesbiyankoy.html')
-    print(result['categories'])
+    print(res)
+    #result = parser_page('http://pornolomka.me/8352-pokazala-kak-byt-lesbiyankoy.html')
 
 if __name__ == '__main__':
     main()
