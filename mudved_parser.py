@@ -85,11 +85,15 @@ def parser_page(url, use_proxy=False):
         print("Content not found")
     try:
         categories = []
-        #tags_a = soup.findAll('div', class_="info-col1")[1].findAll('div', class_="col2-item")
-        tags_a = soup.findAll('div', class_='info-col1')[1].findAll('div', class_="col2-item")[2].findAll('a')
-        for a in tags_a:
-            cat = a.text.strip()
-            categories.append(cat)
+        #tags_a = soup.findAll('div', class_='info-col1')[1].findAll('div', class_="col2-item")[2].findAll('a')
+        tags_a = soup.findAll('div', class_='info-col1')[1].findAll('div', class_="col2-item")
+        for b in tags_a:
+            temp = b.findAll('a')
+            if temp != []:
+                for temp2 in temp:
+                    cat = temp2.text.strip()
+                    categories.append(cat)
+                break
     except:
         categories = [] 
         print("Category not found")
@@ -197,7 +201,7 @@ def multy_parser(site_url):
         print('There are ', str(len(cat_pages_urls)), ' PAGES in CATEGORY ', cat_url)
         pages_urls = list(set(pages_urls + cat_pages_urls))
 
-    print('There are ', str(len(pages_urls)), ' unique PAGES in CATEGORY ', cat_url)
+    print('There are ', str(len(pages_urls)), ' unique PAGES in site', site_url)
     with open(r'parser_data\pages_urls.txt', 'a') as file:
         file.write('\n'.join(pages_urls))
 
@@ -231,7 +235,7 @@ def parser(site_url):
         print('There are ', str(len(cat_pages_urls)), ' PAGES in CATEGORY ', cat_url)
         pages_urls = list(set(pages_urls + cat_pages_urls))
 
-    print('There are ', str(len(pages_urls)), ' PAGES in CATEGORY ', cat_url)
+    print('There are ', str(len(pages_urls)), ' unique PAGES in site', site_url)
     with open(r'parser_data\pages_urls.txt', 'a') as file:
         file.write('\n'.join(pages_urls))
 
@@ -340,12 +344,15 @@ def get_proxylist():
 
 def main():
 
-    #res = parser('http://pornolomka.me')
-    res = multy_parser('http://pornolomka.me')
+    res = parser('http://pornolomka.me')
+    #res = multy_parser('http://pornolomka.me')
     #res = parser('https://www.poimel.cc')
     #res = parser('https://www.pornolomka.info')
     print(res)
-    #result = parser_page('http://pornolomka.me/8352-pokazala-kak-byt-lesbiyankoy.html')
+    #result = parser_page('http://pornolomka.me/84-devushka-drochit-sebe-i-parnyu.html')
+    #result2 = parser_page('http://pornolomka.me/8353-vklyuchil-kameru-konchit.html')
+    #print(result)
+    #print(result2)
 
 if __name__ == '__main__':
     main()
