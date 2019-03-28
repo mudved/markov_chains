@@ -456,6 +456,7 @@ def parser_page_reg(url, use_proxy=False):
     except:
         categories = [] 
         print("Category not found")
+
     try:
         tags = soup.find('meta', {"name":"news_keywords"})['content'].split(',')
     except:
