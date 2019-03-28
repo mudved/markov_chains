@@ -197,7 +197,7 @@ def make_all(page_url):
     time.sleep(random.randint(1,5))
     write_in_db(result, page_url)
     with open('generator_data\parsingdata.txt', 'a') as file:
-        if result['content'] != ''
+        if result['content'] != '':
             file.write(result['content']+'\n')
 
     return True
@@ -371,7 +371,7 @@ def get_proxylist():
 def main():
 
     #res = parser('http://pornolomka.me')
-    #res = multy_parser('http://pornolomka.me')
+    res = multy_parser('http://pornolomka.me', 4)
     res = multy_parser('https://www.pornolomka.info', 4)
     #res = parser('https://www.poimel.cc')
     #res = parser('https://www.pornolomka.info')
