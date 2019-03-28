@@ -171,7 +171,7 @@ def multy_parser(site_url):
         with open(r'parser_data\pages_urls.txt', 'a') as file:
             file.write('\n'.join(pages_urls))
 
-        with Pool(20) as p:
+        with Pool(4) as p:
             p.map(make_all, pages_urls)
 
     print('Parsing site ', site_url, ' is completed')
