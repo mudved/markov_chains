@@ -39,7 +39,6 @@ def create_db_parser():
 
     CREATE TABLE content(
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    cat_id INTEGER NOT NULL REFERENCES category(id),
     url_id INTEGER NOT NULL REFERENCES url(id),
     title TEXT NOT NULL,
     description TEXT,
@@ -65,6 +64,11 @@ def create_db_parser():
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     content_id INTEGER NOT NULL REFERENCES content(id),
     video_id INTEGER NOT NULL REFERENCES video(id));
+
+    CREATE TABLE content_category(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    content_id INTEGER NOT NULL REFERENCES content(id),
+    category_id INTEGER NOT NULL REFERENCES category(id));
 
     CREATE TABLE content_key(
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -110,7 +114,7 @@ def input_db(conn, table_name, options:dict):
             string_id = cursor.fetchone()
             break
         except sqlite3.DatabaseError as err:
-            print("input_db Error: ", err)
+            print("input_db SELECT Error: ", err)
             time.sleep(random.randint(1,5))
 
     if string_id == None:
@@ -120,7 +124,7 @@ def input_db(conn, table_name, options:dict):
             try:
                 cursor.execute(sql)
             except sqlite3.DatabaseError as err:
-                print("input_db write Error: ", err)
+                print("input_db INSERT Error: ", err)
                 time.sleep(random.randint(1,5))
             else:
                 conn.commit()
@@ -134,7 +138,7 @@ def input_db(conn, table_name, options:dict):
 
 
 if __name__ == '__main__':
-    #create_db_parser()
+    create_db_parser()
     conn = sqlite3.connect(r'parser_data\parserDB')
     options = {'tag':'tag_two'}
     id_tag = input_db(conn, 'tag', options)
@@ -164,7 +168,7 @@ if __name__ == '__main__':
     id_video= input_db(conn, 'video', options)
     print(id_video)
 
-    options = {'cat_id':id_category, 'url_id':id_url, 'title':'First title', 'description':'desc-desc', 'h1':'zagolovok', 'content':'first content text'}
+    options = {'url_id':id_url, 'title':'First title', 'description':'desc-desc', 'h1':'zagolovok', 'content':'first content text'}
     id_content= input_db(conn, 'content', options)
     print(id_content)
 
@@ -184,19 +188,12 @@ if __name__ == '__main__':
     id_content_video= input_db(conn, 'content_video', options)
     print(id_content_video)
 
+    options = {'content_id':id_content, 'category_id':id_category}
+    id_content_category= input_db(conn, 'content_category', options)
+    print(id_content_category)
+
     options = {'content_id':id_content, 'donor_id':id_donor}
     id_content_donor= input_db(conn, 'content_donor', options)
     print(id_content_donor)
-    #create_db(1)
-    #create_db(2)
-
-    #conn = sqlite3.connect('markovdb_order3')
-    
-    #tag_id = input_db(conn, 'tag', 'proba_tag_55')
-    #cat_id = input_db(conn, 'category', 'proba_cat_55')
-    #word_id = input_db(conn, 'word', 'proba_word_55')
-    #window_id = input_db(conn, 'window', 'proba_window_55')
-
-    #window_word_id = input_window_word(conn, window_id, word_id)
     
     conn.close()

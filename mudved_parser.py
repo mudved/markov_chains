@@ -82,9 +82,14 @@ def parser_page(url, use_proxy=False):
         content = ''
         print("Content not found")
     try:
-        category = soup.find_all('span', itemprop="title")[1].text.strip()
+        categories = []
+        #tags_a = soup.findAll('div', class_="info-col1")[1].findAll('div', class_="col2-item")
+        tags_a = soup.findAll('div', class_='info-col1')[1].findAll('div', class_="col2-item")[2].findAll('a')
+        for a in tags_a:
+            cat = a.text.strip()
+            categories.append(cat)
     except:
-        category = ''
+        categories = [] 
         print("Category not found")
     try:
         tags = soup.find('meta', {"name":"news_keywords"})['content'].split(',')
@@ -92,7 +97,7 @@ def parser_page(url, use_proxy=False):
         tags = []
         print("Tags not found")
 
-    result = {'h1':h1, 'title':title, 'description':description, 'video':video, 'image':image, 'content':content, 'category':category, 'tags':tags}
+    result = {'h1':h1, 'title':title, 'description':description, 'video':video, 'image':image, 'content':content, 'categories':categories, 'tags':tags}
 
     return result
 
@@ -258,7 +263,7 @@ def write_in_db(result, url):
     options = {'key':result['h1']}
     id_key= input_db(conn, 'key', options)
 
-    options = {'cat_id':id_category, 'url_id':id_url, 'title':result['title'], 'description':result['description'], 'h1':result['h1'], 'content':result['content']}
+    options = {'url_id':id_url, 'title':result['title'], 'description':result['description'], 'h1':result['h1'], 'content':result['content']}
     id_content= input_db(conn, 'content', options)
 
     options = {'content_id':id_content, 'donor_id':id_donor}
@@ -272,6 +277,11 @@ def write_in_db(result, url):
 
     options = {'content_id':id_content, 'video_id':id_video}
     id_content_video= input_db(conn, 'content_video', options)
+
+    for cat in result['category']:
+
+        options = {'content_id':id_content, 'category_id':id_category}
+        id_content_category= input_db(conn, 'content_category', options)
 
     for tag in result['tags']:
         options = {'tag':tag}
@@ -313,8 +323,10 @@ def main():
     #parser('http://pornolomka.me')
     #multy_parser('http://pornolomka.me')
     #res = parser('https://www.poimel.cc')
-    res = parser('https://www.pornolomka.info')
-    print(res)
+    #res = parser('https://www.pornolomka.info')
+    #print(res)
+    result = parser_page('http://pornolomka.me/8352-pokazala-kak-byt-lesbiyankoy.html')
+    print(result['categories'])
 
 if __name__ == '__main__':
     main()
