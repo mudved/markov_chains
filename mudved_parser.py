@@ -4,7 +4,6 @@ import re
 import time
 import random
 from random import choice
-from bs4 import BeautifulSoup
 from multiprocessing import Pool
 from mudved_parser_sql import *
 from settings import *
@@ -51,59 +50,6 @@ def get_pages_urls_reg(cat_url):
     pages_urls = list(set(pages_urls))
     return pages_urls
 
-def make_all(page_url):
-    '''Функция для запуска парсинга в несколько потоков'''
-
-    result = parser_page_reg(page_url, False)
-
-    if not result:
-        return False
-
-    time.sleep(random.randint(1,5))
-    write_in_db(result, page_url)
-    with open('generator_data\parsingdata.txt', 'a') as file:
-        if result['content'] != '':
-            file.write(result['content']+'\n')
-
-    return True
-
-def multy_parser(site_url, streams=3):
-    '''Мульти-парсер в несколько потоков
-    streams - количество потоков парсинга страниц'''
-
-    if not os.path.exists('parser_data\parserDB'):
-        print('DB parserDB is not exist')
-        create_db_parser()
-
-    cats_urls = get_cats_urls(site_url)
-    if not cats_urls:
-        return False
-
-    print('There are ', str(len(cats_urls)), ' CATEGORIES in site ', site_url)
-    
-    pages_urls = []
-
-    for cat_url in cats_urls:
-        print('START parsing CATEGORY: ', cat_url)
-        cat_pages_urls = get_cat_pages(cat_url)
-        if not cat_pages_urls:
-            print("Error parsing category ", cat_url)
-            continue
-
-        print('There are ', str(len(cat_pages_urls)), ' PAGES in CATEGORY ', cat_url)
-        pages_urls = list(set(pages_urls + cat_pages_urls))
-
-    print('There are ', str(len(pages_urls)), ' unique PAGES in site', site_url)
-    with open(r'parser_data\pages_urls.txt', 'a') as file:
-        file.write('\n'.join(pages_urls))
-
-    with Pool(streams) as p:
-        p.map(make_all, pages_urls)
-
-    print('Parsing site ', site_url, ' is completed')
-    return True
-
-
 def parser_page_reg(url, use_proxy = False):
     '''Функция для парсинга страниц доноров регулярками'''
 
@@ -139,23 +85,66 @@ def parser_page_reg(url, use_proxy = False):
 
     return result
 
+def make_all_reg(page_url):
+    '''Функция для запуска парсинга в несколько потоков'''
+
+    result = parser_page_reg(page_url, False)
+
+    if not result:
+        return False
+
+    time.sleep(random.randint(1,3))
+    write_in_db(result, page_url)
+    with open('generator_data\parsingdata.txt', 'a') as file:
+        if result['content'] != '':
+            file.write(result['content']+'\n')
+
+    return True
+
+def multy_parser_reg(site_url, streams = 3):
+    '''Мульти-парсер в несколько потоков
+    streams - количество потоков парсинга страниц'''
+
+    if not os.path.exists('parser_data\parserDB'):
+        print('DB "parserDB" is not exist')
+        create_db_parser()
+
+    cats_urls = get_cats_urls_reg(site_url)
+    if cats_urls == []:
+        print('Categories not found')
+        return False
+
+    print('Found ', str(len(cats_urls)), ' CATEGORIES in site ', site_url)
+    
+    pages_urls = []
+
+    for cat_url in cats_urls:
+        print('START parsing CATEGORY: ', cat_url)
+        cat_pages_urls = get_pages_urls_reg(cat_url)
+        if not cat_pages_urls:
+            print("Error parsing category ", cat_url)
+            continue
+
+        print('Found ', str(len(cat_pages_urls)), ' PAGES in CATEGORY ', cat_url)
+        pages_urls = list(set(pages_urls + cat_pages_urls))
+
+    print('Found ', str(len(pages_urls)), ' unique PAGES in site', site_url)
+    with open(r'parser_data\pages_urls.txt', 'a') as file:
+        file.write('\n'.join(pages_urls))
+
+    with Pool(streams) as p:
+        p.map(make_all_reg, pages_urls)
+
+    print('Parsing site ', site_url, ' is COMPLETED')
+    return True
+
 def main():
 
-    #res = parser('http://pornolomka.me')
-    #res = multy_parser('http://pornolomka.me', 4)
+    res = multy_parser('http://pornolomka.me', 4)
     #res = multy_parser('https://www.pornolomka.info', 4)
     #res = parser('https://www.poimel.cc')
     #res = parser('https://www.pornolomka.info')
     #print(res)
-    #result = parser_page_reg('https://www.pornolomka.info/11303-grudastaja-telka-drochit-ljubimym-dyldo.html')
-    #print(result)
-    #result2 = parser_page_reg('http://pornolomka.me/8352-pokazala-kak-byt-lesbiyankoy.html')
-    #print(result2)
-    cats = get_cats_urls_reg('http://pornolomka.me')
-    print(cats[0])
-    pages = get_pages_urls_reg(cats[0])
-    print(pages)
-    print(len(pages))
 
 if __name__ == '__main__':
     main()

@@ -2,6 +2,22 @@ from bs4 import BeautifulSoup
 from mudved_parser_sql import *
 from utils import *
 
+def make_all(page_url):
+    '''Функция для запуска парсинга в несколько потоков'''
+
+    result = parser_page(page_url, False)
+
+    if not result:
+        return False
+
+    time.sleep(random.randint(1,5))
+    write_in_db(result, page_url)
+    with open('generator_data\parsingdata.txt', 'a') as file:
+        if result['content'] != '':
+            file.write(result['content']+'\n')
+
+    return True
+
 def get_cats_urls(index_url):
     '''Получает url-ы категорий сайта'''
 
@@ -55,6 +71,42 @@ def get_cat_pages(cat_url):
 
     pages_urls = list(set(pages_urls))
     return pages_urls
+
+def multy_parser(site_url, streams=3):
+    '''Мульти-парсер в несколько потоков
+    streams - количество потоков парсинга страниц'''
+
+    if not os.path.exists('parser_data\parserDB'):
+        print('DB parserDB is not exist')
+        create_db_parser()
+
+    cats_urls = get_cats_urls(site_url)
+    if not cats_urls:
+        return False
+
+    print('There are ', str(len(cats_urls)), ' CATEGORIES in site ', site_url)
+    
+    pages_urls = []
+
+    for cat_url in cats_urls:
+        print('START parsing CATEGORY: ', cat_url)
+        cat_pages_urls = get_cat_pages(cat_url)
+        if not cat_pages_urls:
+            print("Error parsing category ", cat_url)
+            continue
+
+        print('There are ', str(len(cat_pages_urls)), ' PAGES in CATEGORY ', cat_url)
+        pages_urls = list(set(pages_urls + cat_pages_urls))
+
+    print('There are ', str(len(pages_urls)), ' unique PAGES in site', site_url)
+    with open(r'parser_data\pages_urls.txt', 'a') as file:
+        file.write('\n'.join(pages_urls))
+
+    with Pool(streams) as p:
+        p.map(make_all, pages_urls)
+
+    print('Parsing site ', site_url, ' is completed')
+    return True
 
 def parser_page(url, use_proxy=False):
     '''Функция для парсинга страниц доноров основана на BeautifulSoup'''
