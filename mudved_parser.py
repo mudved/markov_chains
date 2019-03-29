@@ -22,34 +22,29 @@ def get_cats_urls_reg(index_url):
         cat_url = index_url + cat
         cats_urls.append(cat_url)
 
-    print(cats_urls)
     return cats_urls
 
-def get_cat_pages(cat_url):
+def get_pages_urls_reg(cat_url):
     '''Парсит страницы категорий и возвращает список ссылок на все страницы категории'''
 
     pages_urls = []
+    donor = get_donor_url(cat_url)
     with open(r'parser_data\pages_urls_parsed.txt', 'r') as file:
         pages_urls_parsed = file.read().splitlines()
 
-    for i in range(1, 500):
+    for i in range(1, 5):
         cat_page_url = cat_url + 'page/' + str(i) + '/'
-        cat_page_html = get_html(cat_page_url)
-        cat_page_soup = BeautifulSoup(cat_page_html, 'lxml')
-
-        if not cat_page_soup.find('h1', class_="post_title") is None:
+        cat_page_html = get_html(cat_page_url, False)
+        error = do_reg(cat_page_html, donor, 'error_reg')
+        if error != '':
             print("END parsing CATEGORY: ", cat_url)
             break
 
         print("Parsing urls from page №", i, end = '\r')
-        try:
-            urls_on_page = cat_page_soup.find_all('a', class_="short_post post_img")
-        except:
-            print("Error parsing page ", cat_page_url)
-            return False
+        urls_on_page = do_reg_list(cat_page_html, donor, 'all_pages_url_reg', 'pages_url_reg')
 
         for url_page in urls_on_page:
-            url = url_page['href']
+            url = url_page.strip()
             if url not in pages_urls_parsed:
                 pages_urls.append(url)
 
@@ -156,8 +151,11 @@ def main():
     #print(result)
     #result2 = parser_page_reg('http://pornolomka.me/8352-pokazala-kak-byt-lesbiyankoy.html')
     #print(result2)
-    #get_cats_urls_reg('http://pornolomka.me')
-
+    cats = get_cats_urls_reg('http://pornolomka.me')
+    print(cats[0])
+    pages = get_pages_urls_reg(cats[0])
+    print(pages)
+    print(len(pages))
 
 if __name__ == '__main__':
     main()

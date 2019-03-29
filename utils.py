@@ -33,7 +33,8 @@ def do_reg(html, donor, reg_template):
         reg_result = re.search(PARSING_PAGE_SETTINGS[donor][reg_template], html)[0].strip()
     except:
         reg_result = ''
-        print('{} not found'.format(reg_template))
+        if reg_template != 'error_reg':
+            print('{} not found'.format(reg_template))
     return reg_result
 
 def do_reg_list(html, donor, reg_template_all, reg_template):

@@ -25,6 +25,37 @@ def get_cats_urls(index_url):
 
     return cats_urls
 
+def get_cat_pages(cat_url):
+    '''Парсит страницы категорий и возвращает список ссылок на все страницы категории'''
+
+    pages_urls = []
+    with open(r'parser_data\pages_urls_parsed.txt', 'r') as file:
+        pages_urls_parsed = file.read().splitlines()
+
+    for i in range(1, 500):
+        cat_page_url = cat_url + 'page/' + str(i) + '/'
+        cat_page_html = get_html(cat_page_url)
+        cat_page_soup = BeautifulSoup(cat_page_html, 'lxml')
+
+        if not cat_page_soup.find('h1', class_="post_title") is None:
+            print("END parsing CATEGORY: ", cat_url)
+            break
+
+        print("Parsing urls from page №", i, end = '\r')
+        try:
+            urls_on_page = cat_page_soup.find_all('a', class_="short_post post_img")
+        except:
+            print("Error parsing page ", cat_page_url)
+            return False
+
+        for url_page in urls_on_page:
+            url = url_page['href']
+            if url not in pages_urls_parsed:
+                pages_urls.append(url)
+
+    pages_urls = list(set(pages_urls))
+    return pages_urls
+
 def parser_page(url, use_proxy=False):
     '''Функция для парсинга страниц доноров основана на BeautifulSoup'''
 
