@@ -120,12 +120,30 @@ def parser_page(url, use_proxy=False):
         categories = [] 
         print("Category not found")
     try:
-        tags = soup.find('meta', {"name":"news_keywords"})['content'].split(',')
+        tags = []
+        all_tags = soup.find('meta', {"name":"news_keywords"})['content'].split(',')
+        for tag in all_tags:
+            tag = tag.strip()
+            tags.append(tag)
     except:
         tags = []
         print("Tags not found")
 
-    result = {'h1':h1, 'title':title, 'description':description, 'video':video, 'image':image, 'content':content, 'categories':categories, 'tags':tags}
+    try:
+        actors = []
+        actors_a = soup.findAll('div', class_='info-col1')[1].findAll('div', class_="col2-item")
+        for b in actors_a:
+            temp = b.findAll('a')
+            if temp != []:
+                for temp2 in temp:
+                    actor = temp2.text.strip()
+                    if (actor not in tags) and (actor not in categories):
+                        actors.append(actor)
+    except:
+        actors = []
+        print("Actors not found")
+
+    result = {'h1':h1, 'title':title, 'description':description, 'video':video, 'image':image, 'content':content, 'categories':categories, 'tags':tags, 'actors':actors}
 
     with open(r'parser_data\pages_urls_parsed.txt', 'a') as file:
         file.write(url +'\n')
@@ -298,7 +316,6 @@ def write_in_db(result, url):
     options = {'url':url}
     id_url= input_db(conn, 'url', options)
 
-
     options = {'donor':donor}
     id_donor= input_db(conn, 'donor', options)
 
@@ -339,6 +356,14 @@ def write_in_db(result, url):
         
         options = {'content_id':id_content, 'tag_id':id_tag}
         id_content_tag = input_db(conn, 'content_tag', options)
+
+    for actor in result['actors']:
+        options = {'actor':actor}
+        id_actor = input_db(conn, 'actor', options)
+        
+        options = {'content_id':id_content, 'actor_id':id_actor}
+        id_content_actor = input_db(conn, 'content_actor', options)
+
     print('Write in DB ***************** OK')
 
     conn.close()
@@ -411,6 +436,8 @@ def parser_page_reg(url, use_proxy=False):
         content_reg = r'(?<=itemprop="description">)\s*.*?(?=<)'
         all_categories_reg = r'(?<=Категория:</b>).*(?=</div>)'
         categories_reg = r'(?<=">).*?(?=</a>)'
+        all_tags_reg = r'(?<=Теги:</b>).*(?=</div>)'
+        tags_reg = r'(?<=">).*?(?=</a>)'
 
         video = re.search(video_reg, html)[0]
         print(video)
@@ -427,6 +454,9 @@ def parser_page_reg(url, use_proxy=False):
         all_categories = re.search(all_categories_reg, html)[0]
         categories = re.findall(categories_reg, all_categories)
         print(categories)
+        all_tags = re.search(all_tags_reg, html)[0]
+        tags = re.findall(tags_reg, all_tags)
+        print(tags)
 
 
     elif donor == 'https://www.pornolomka.info/':
@@ -480,8 +510,8 @@ def main():
     #print(res)
     #result = parser_page_reg('https://www.pornolomka.info/11303-grudastaja-telka-drochit-ljubimym-dyldo.html')
     #print(result)
-    result2 = parser_page_reg('http://pornolomka.me/8352-pokazala-kak-byt-lesbiyankoy.html')
-    #print(result2)
+    result2 = parser_page('http://pornolomka.me/8352-pokazala-kak-byt-lesbiyankoy.html')
+    print(result2)
 
 if __name__ == '__main__':
     main()
