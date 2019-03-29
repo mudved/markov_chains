@@ -5,38 +5,23 @@ import time
 import random
 from random import choice
 from bs4 import BeautifulSoup
-from mudved_parser_sql import *
 from multiprocessing import Pool
+from mudved_parser_sql import *
+from settings import *
+from utils import *
 
-def get_html(url, useragent=None, proxy=None):
-    '''Получает текст html страницы по url-адресу'''
+def get_html(url, use_proxy = False, try_count = 10):
+    '''Получает текст html страницы по url-адресу
+    try_count - количество попыток использовать прокси'''
 
-    try:
-        r = requests.get(url, headers=useragent, proxies=proxy)
-    except:
-        print("Error get html for url: ", url)
-        return False
-    return r.text
-
-def get_ip(html):
-    soup = BeautifulSoup(html, 'lxml')
-    ip = soup.find('span', class_='ip').text.strip()
-    ua = soup.find('span', class_='ip').find_next_sibling('span').text.strip()
-    print(ip)
-    print(ua)
-
-def parser_page(url, use_proxy=False):
-    '''Функция для парсинга страниц доноров'''
-
-    print("Start parsing: ", url)
     if use_proxy:
         useragents = open(r'parser_data\useragents.txt').read().split('\n')
         proxies = open(r'parser_data\proxies.txt').read().split('\n')
-        for i in range(10):
+        for i in range(int(try_count)):
             proxy = {'http': 'http://' + choice(proxies)}
             useragent = {'User-Agent': choice(useragents)}
             try:
-                html = get_html(url, useragent, proxy)
+                r = requests.get(url, headers=useragent, proxies=proxy)
             except:
                 continue
             else:
@@ -44,20 +29,30 @@ def parser_page(url, use_proxy=False):
                 break
     else:
         print("Proxy not use.")
-        html = get_html(url)
+        try:
+            r = requests.get(url)
+        except:
+            print("Error get html for url: ", url)
+            with open(r'parser_data\pages_urls_bad.txt', 'a') as file:
+                file.write(url +'\n')
 
+            return False
+
+    return r.text
+
+def parser_page(url, use_proxy=False):
+    '''Функция для парсинга страниц доноров основана на BeautifulSoup'''
+
+    print("Start parsing: ", url)
+    html = get_html(url, use_proxy)
     if not html:
-        print("Error page parsing")
-        with open(r'parser_data\pages_urls_bad.txt', 'a') as file:
-            file.write(url +'\n')
         return False
 
+    with open(r'parser_data\pages_urls_parsed.txt', 'a') as file:
+        file.write(url +'\n')
+
     soup = BeautifulSoup(html, 'lxml')
-    
-    temp = url.split('//')
-    protokol = temp[0]
-    domain = temp[1].split('/')[0]
-    donor = protokol + '//' + domain + '/'
+    donor = get_donor_url(url)
 
     if donor == 'http://pornolomka.me/':
         try:
@@ -143,10 +138,15 @@ def parser_page(url, use_proxy=False):
         actors = []
         print("Actors not found")
 
-    result = {'h1':h1, 'title':title, 'description':description, 'video':video, 'image':image, 'content':content, 'categories':categories, 'tags':tags, 'actors':actors}
-
-    with open(r'parser_data\pages_urls_parsed.txt', 'a') as file:
-        file.write(url +'\n')
+    result = {'h1':h1, 
+              'title':title, 
+              'description':description, 
+              'video':video, 
+              'image':image, 
+              'content':content, 
+              'categories':categories, 
+              'tags':tags, 
+              'actors':actors}
 
     return result
 
@@ -303,200 +303,38 @@ def parser(site_url):
     print('Parsing site ', site_url, ' is completed')
     return True
 
-def write_in_db(result, url):
-    '''Записывает в БД результаты парсинга страницы'''
-
-    temp = url.split('//')
-    protokol = temp[0]
-    domain = temp[1].split('/')[0]
-    donor = protokol + '//' + domain + '/'
-
-    conn = sqlite3.connect(r'parser_data\parserDB')
-
-    options = {'url':url}
-    id_url= input_db(conn, 'url', options)
-
-    options = {'donor':donor}
-    id_donor= input_db(conn, 'donor', options)
-
-    options = {'image':result['image']}
-    id_image= input_db(conn, 'image', options)
-
-    options = {'video':result['video']}
-    id_video= input_db(conn, 'video', options)
-
-    options = {'key':result['h1']}
-    id_key= input_db(conn, 'key', options)
-
-    options = {'url_id':id_url, 'title':result['title'], 'description':result['description'], 'h1':result['h1'], 'content':result['content']}
-    id_content= input_db(conn, 'content', options)
-
-    options = {'content_id':id_content, 'donor_id':id_donor}
-    id_content_donor= input_db(conn, 'content_donor', options)
-    
-    options = {'content_id':id_content, 'image_id':id_image}
-    id_content_image= input_db(conn, 'content_image', options)
-
-    options = {'content_id':id_content, 'key_id':id_key}
-    id_content_key= input_db(conn, 'content_key', options)
-
-    options = {'content_id':id_content, 'video_id':id_video}
-    id_content_video= input_db(conn, 'content_video', options)
-
-    for category in result['categories']:
-        options = {'category':category}
-        id_category= input_db(conn, 'category', options)
-
-        options = {'content_id':id_content, 'category_id':id_category}
-        id_content_category= input_db(conn, 'content_category', options)
-
-    for tag in result['tags']:
-        options = {'tag':tag}
-        id_tag = input_db(conn, 'tag', options)
-        
-        options = {'content_id':id_content, 'tag_id':id_tag}
-        id_content_tag = input_db(conn, 'content_tag', options)
-
-    for actor in result['actors']:
-        options = {'actor':actor}
-        id_actor = input_db(conn, 'actor', options)
-        
-        options = {'content_id':id_content, 'actor_id':id_actor}
-        id_content_actor = input_db(conn, 'content_actor', options)
-
-    print('Write in DB ***************** OK')
-
-    conn.close()
-    
-def get_proxylist():
-    '''Парсит список прокси и портов и записывает в файл
-    возвращает True, если удалось записать хотя бы 1 прокси'''
-
-    print("Start proxy parsing")
-    url = 'https://free-proxy-list.net'
-    html = get_html(url)
-    soup = BeautifulSoup(html, 'lxml')
-
-    with open(r'parser_data\proxies.txt', 'w') as f:
-        first = True
-        for i in range(1, 20):
-            ip = soup.findAll('tr')[i].next_sibling('td')[0].text.strip()
-            port = soup.findAll('tr')[i].next_sibling('td')[1].text.strip()
-            yes =  soup.findAll('tr')[i].next_sibling('td')[6].text.strip()
-            if yes == 'no' and not first:
-                proxy = '\n{0}:{1}'.format(ip, port)
-                f.write(proxy)
-            elif yes == 'no' and first:
-                proxy = '{0}:{1}'.format(ip, port)
-                first = False
-                f.write(proxy)
-
-    return not first
-
-def parser_page_reg(url, use_proxy=False):
+def parser_page_reg(url, use_proxy = False):
     '''Функция для парсинга страниц доноров регулярками'''
 
     print("Start parsing (reg mode): ", url)
-    if use_proxy:
-        useragents = open(r'parser_data\useragents.txt').read().split('\n')
-        proxies = open(r'parser_data\proxies.txt').read().split('\n')
-        for i in range(10):
-            proxy = {'http': 'http://' + choice(proxies)}
-            useragent = {'User-Agent': choice(useragents)}
-            try:
-                html = get_html(url, useragent, proxy)
-            except:
-                continue
-            else:
-                print("Used proxy: ", proxy)
-                break
-    else:
-        print("Proxy not use.")
-        html = get_html(url)
+    html = get_html(url, use_proxy)
 
     if not html:
-        print("Error page parsing")
-        with open(r'parser_data\pages_urls_bad.txt', 'a') as file:
-            file.write(url +'\n')
         return False
     
-    soup = BeautifulSoup(html, 'lxml')
-
-    protokol = url.split('//')[0]
-    domain = url.split('//')[1].split('/')[0]
-    donor = protokol + '//' + domain + '/'
-
-    if donor == 'http://pornolomka.me/':
-
-        video_reg = r'(?<=:video" content=")\s*http.*?(?=")'
-        image_reg = r'(?<=:image" content=")\s*http.*?(?=")'
-        title_reg = r'(?<=title>)\s*.*?(?=<)'
-        description_reg = r'(?<=description" content=")\s*.*?(?=")'
-        h1_reg = r'(?<=news-title" itemprop="name">)\s*.*?(?=<)'
-        content_reg = r'(?<=itemprop="description">)\s*.*?(?=<)'
-        all_categories_reg = r'(?<=Категория:</b>).*(?=</div>)'
-        categories_reg = r'(?<=">).*?(?=</a>)'
-        all_tags_reg = r'(?<=Теги:</b>).*(?=</div>)'
-        tags_reg = r'(?<=">).*?(?=</a>)'
-
-        video = re.search(video_reg, html)[0]
-        print(video)
-        image = re.search(image_reg, html)[0]
-        print(image)
-        title = re.search(title_reg, html)[0]
-        print(title)
-        description = re.search(description_reg, html)[0]
-        print(description)
-        h1 = re.search(h1_reg, html)[0]
-        print(h1)
-        content = re.search(content_reg, html)[0].strip()
-        print(content)
-        all_categories = re.search(all_categories_reg, html)[0]
-        categories = re.findall(categories_reg, all_categories)
-        print(categories)
-        all_tags = re.search(all_tags_reg, html)[0]
-        tags = re.findall(tags_reg, all_tags)
-        print(tags)
-
-
-    elif donor == 'https://www.pornolomka.info/':
-        try:
-            video = soup.find('div', {"class":"post_content cf"}).find("script").text
-            video = re.search(r'http.*(?="})', video)[0]
-        except:
-            video = ''
-            print("Video not found")
-        try:
-            image = soup.find('meta', {"property":"og:image"})['content']
-        except:
-            image = ''
-            print("Image not found")
-
-    try:
-        categories = []
-        #tags_a = soup.findAll('div', class_='info-col1')[1].findAll('div', class_="col2-item")[2].findAll('a')
-        tags_a = soup.findAll('div', class_='info-col1')[1].findAll('div', class_="col2-item")
-        for b in tags_a:
-            temp = b.findAll('a')
-            if temp != []:
-                for temp2 in temp:
-                    cat = temp2.text.strip()
-                    categories.append(cat)
-                break
-    except:
-        categories = [] 
-        print("Category not found")
-
-    try:
-        tags = soup.find('meta', {"name":"news_keywords"})['content'].split(',')
-    except:
-        tags = []
-        print("Tags not found")
-
-    result = {'h1':h1, 'title':title, 'description':description, 'video':video, 'image':image, 'content':content, 'categories':categories, 'tags':tags}
-
     with open(r'parser_data\pages_urls_parsed.txt', 'a') as file:
         file.write(url +'\n')
+
+    donor = get_donor_url(url)
+    title = do_reg(html, donor, 'title_reg')
+    description = do_reg(html, donor, 'description_reg')
+    h1 = do_reg(html, donor, 'h1_reg')
+    content = do_reg(html, donor, 'content_reg')
+    video = do_reg(html, donor, 'video_reg')
+    image = do_reg(html, donor, 'image_reg')
+    categories = do_reg_list(html, donor, 'all_categories_reg', 'categories_reg')
+    tags = do_reg_list(html, donor, 'all_tags_reg', 'tags_reg')
+    actors = do_reg_list(html, donor, 'all_actors_reg', 'actors_reg')
+
+    result = {'h1':h1, 
+              'title':title, 
+              'description':description, 
+              'video':video, 
+              'image':image, 
+              'content':content, 
+              'categories':categories, 
+              'tags':tags, 
+              'actors':actors}
 
     return result
 
@@ -510,7 +348,7 @@ def main():
     #print(res)
     #result = parser_page_reg('https://www.pornolomka.info/11303-grudastaja-telka-drochit-ljubimym-dyldo.html')
     #print(result)
-    result2 = parser_page('http://pornolomka.me/8352-pokazala-kak-byt-lesbiyankoy.html')
+    result2 = parser_page_reg('http://pornolomka.me/8352-pokazala-kak-byt-lesbiyankoy.html')
     print(result2)
 
 if __name__ == '__main__':

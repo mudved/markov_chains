@@ -145,6 +145,66 @@ def input_db(conn, table_name, options:dict):
     cursor.close()
     return string_id
 
+def write_in_db(result, url):
+    '''Записывает в БД результаты парсинга страницы'''
+
+    donor = get_donor_url(url)
+    conn = sqlite3.connect(r'parser_data\parserDB')
+
+    options = {'url':url}
+    id_url= input_db(conn, 'url', options)
+
+    options = {'donor':donor}
+    id_donor= input_db(conn, 'donor', options)
+
+    options = {'image':result['image']}
+    id_image= input_db(conn, 'image', options)
+
+    options = {'video':result['video']}
+    id_video= input_db(conn, 'video', options)
+
+    options = {'key':result['h1']}
+    id_key= input_db(conn, 'key', options)
+
+    options = {'url_id':id_url, 'title':result['title'], 'description':result['description'], 'h1':result['h1'], 'content':result['content']}
+    id_content= input_db(conn, 'content', options)
+
+    options = {'content_id':id_content, 'donor_id':id_donor}
+    id_content_donor= input_db(conn, 'content_donor', options)
+    
+    options = {'content_id':id_content, 'image_id':id_image}
+    id_content_image= input_db(conn, 'content_image', options)
+
+    options = {'content_id':id_content, 'key_id':id_key}
+    id_content_key= input_db(conn, 'content_key', options)
+
+    options = {'content_id':id_content, 'video_id':id_video}
+    id_content_video= input_db(conn, 'content_video', options)
+
+    for category in result['categories']:
+        options = {'category':category}
+        id_category= input_db(conn, 'category', options)
+
+        options = {'content_id':id_content, 'category_id':id_category}
+        id_content_category= input_db(conn, 'content_category', options)
+
+    for tag in result['tags']:
+        options = {'tag':tag}
+        id_tag = input_db(conn, 'tag', options)
+        
+        options = {'content_id':id_content, 'tag_id':id_tag}
+        id_content_tag = input_db(conn, 'content_tag', options)
+
+    for actor in result['actors']:
+        options = {'actor':actor}
+        id_actor = input_db(conn, 'actor', options)
+        
+        options = {'content_id':id_content, 'actor_id':id_actor}
+        id_content_actor = input_db(conn, 'content_actor', options)
+
+    print('Write in DB ***************** OK')
+
+    conn.close()
 
 if __name__ == '__main__':
     create_db_parser()
