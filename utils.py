@@ -1,4 +1,5 @@
 import re
+import requests
 from settings import *
 
 def get_ip(html):
@@ -22,7 +23,7 @@ def get_donor_url(url):
 
     protokol = url.split('//')[0]
     domain = url.split('//')[1].split('/')[0]
-    donor = protokol + '//' + domain + '/'
+    donor = protokol + '//' + domain
     return donor
 
 def do_reg(html, donor, reg_template):
@@ -39,7 +40,7 @@ def do_reg_list(html, donor, reg_template_all, reg_template):
     '''Функция выполняет регулярные выражения и возвращает найденный, либо пустой список результатов'''
 
     try:
-        all_items = re.search(PARSING_PAGE_SETTINGS[donor][reg_template_all], html)[0]
+        all_items = re.search(PARSING_PAGE_SETTINGS[donor][reg_template_all], html, re.S)[0]
         items = re.findall(PARSING_PAGE_SETTINGS[donor][reg_template], all_items)
         reg_result = strip_list(items)
     except:
@@ -71,3 +72,32 @@ def get_proxylist():
                 f.write(proxy)
 
     return not first
+
+def get_html(url, use_proxy = False, try_count = 10):
+    '''Получает текст html страницы по url-адресу
+    try_count - количество попыток использовать прокси'''
+
+    if use_proxy:
+        useragents = open(r'parser_data\useragents.txt').read().split('\n')
+        proxies = open(r'parser_data\proxies.txt').read().split('\n')
+        for i in range(int(try_count)):
+            proxy = {'http': 'http://' + choice(proxies)}
+            useragent = {'User-Agent': choice(useragents)}
+            try:
+                r = requests.get(url, headers=useragent, proxies=proxy)
+            except:
+                continue
+            else:
+                print("Used proxy: ", proxy)
+                break
+    else:
+        try:
+            r = requests.get(url)
+        except:
+            print("Error get html for url: ", url)
+            with open(r'parser_data\pages_urls_bad.txt', 'a') as file:
+                file.write(url +'\n')
+
+            return False
+
+    return r.text
