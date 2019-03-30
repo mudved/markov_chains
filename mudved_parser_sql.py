@@ -118,6 +118,7 @@ def input_db(conn, table_name, options:dict):
 
     sql = "SELECT id FROM {0} WHERE {1}".format(table_name, string)
 
+    error_count = 0
     while True:
         try:    
             cursor.execute(sql)
@@ -125,7 +126,12 @@ def input_db(conn, table_name, options:dict):
             break
         except sqlite3.DatabaseError as err:
             print("input_db SELECT Error: ", err)
+            error_count += 1
             time.sleep(random.randint(1,5))
+            if error_count > 5:
+                print("input_db SELECT Error more then 5 times: ", sql)
+                string_id = None #Сомнительный путь
+                break
 
     if string_id == None:
         sql = "INSERT OR IGNORE INTO {0} ({1}) VALUES ({2})".format(table_name, string_rows, string_options) 

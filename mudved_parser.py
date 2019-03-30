@@ -31,7 +31,7 @@ def get_pages_urls_reg(cat_url):
     with open(r'parser_data\pages_urls_parsed.txt', 'r') as file:
         pages_urls_parsed = file.read().splitlines()
 
-    for i in range(1, 5):
+    for i in range(1, 500):
         cat_page_url = cat_url + 'page/' + str(i) + '/'
         cat_page_html = get_html(cat_page_url, False)
         error = do_reg(cat_page_html, donor, 'error_reg')
@@ -140,10 +140,10 @@ def multy_parser_reg(site_url, streams = 3):
 
 def main():
 
-    res = multy_parser('http://pornolomka.me', 4)
-    #res = multy_parser('https://www.pornolomka.info', 4)
-    #res = parser('https://www.poimel.cc')
-    #res = parser('https://www.pornolomka.info')
+    res = multy_parser_reg('http://pornolomka.me', 4)
+    #res = multy_parser_reg('https://www.pornolomka.info', 4)
+    #('https://www.poimel.cc')
+    #('https://www.pornolomka.info')
     #print(res)
 
 if __name__ == '__main__':
