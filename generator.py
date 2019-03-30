@@ -178,7 +178,7 @@ def main():
 
     window, d = random.choice(list(mark.items()))
     print(window)
-    print(generate_markov(mark, 3, window))
+    print(generate_markov(new_mark, 3, window))
 
     #make_markov_db(3, data)
 
