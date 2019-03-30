@@ -30,7 +30,7 @@ def do_reg(html, donor, reg_template):
     '''Функция выполняет регулярное выражение и возвращает найденную, либо пустую строку'''
 
     try:
-        reg_result = re.search(PARSING_PAGE_SETTINGS[donor][reg_template], html)[0].strip()
+        reg_result = re.search(PARSING_PAGE_SETTINGS[donor][reg_template], html, re.S)[0].strip()
     except:
         reg_result = ''
         if reg_template != 'error_reg':

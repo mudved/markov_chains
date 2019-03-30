@@ -23,15 +23,16 @@ def get_cats_urls_reg(index_url):
 
     return cats_urls
 
-def get_pages_urls_reg(cat_url):
-    '''Парсит страницы категорий и возвращает список ссылок на все страницы категории'''
+def get_pages_urls_reg(cat_url, count_pages = 500):
+    '''Парсит страницы категорий и возвращает список ссылок на все страницы категории
+    count_pages - количество страниц категории, которые нужно обойти'''
 
     pages_urls = []
     donor = get_donor_url(cat_url)
     with open(r'parser_data\pages_urls_parsed.txt', 'r') as file:
         pages_urls_parsed = file.read().splitlines()
 
-    for i in range(1, 500):
+    for i in range(1, int(count_pages + 1)):
         cat_page_url = cat_url + 'page/' + str(i) + '/'
         cat_page_html = get_html(cat_page_url, False)
         error = do_reg(cat_page_html, donor, 'error_reg')
@@ -138,13 +139,35 @@ def multy_parser_reg(site_url, streams = 3):
     print('Parsing site ', site_url, ' is COMPLETED')
     return True
 
+def test_reg(url):
+    '''Функция для тестирования настроек регулярных выражений для сайта'''
+
+    print("************************")
+    print("* Result parsing page: *")
+    print("************************")
+    res = parser_page_reg(url, False)
+    print(res)
+    print("******************************")
+    print("* Result parsing categories: *")
+    print("******************************")
+    cats = get_cats_urls_reg(get_donor_url(url))
+    print("Parsing ", str(len(cats)), " categories.")
+    print(cats)
+    print("*************************************")
+    print("* Result parsing urls from cat page *")
+    print("*************************************")
+    urls = get_pages_urls_reg(cats[1], 1)
+    print("Parsing ", str(len(urls)), " pages in category ", cats[1])
+    print(urls, '\n')
+
 def main():
 
-    res = multy_parser_reg('http://pornolomka.me', 4)
-    #res = multy_parser_reg('https://www.pornolomka.info', 4)
+    #res = multy_parser_reg('http://pornolomka.me', 4)
+    res = multy_parser_reg('https://www.pornolomka.info', 4)
     #('https://www.poimel.cc')
     #('https://www.pornolomka.info')
-    #print(res)
+    #test_reg('http://pornolomka.me/8372-chb-domashka.html')
+    #test_reg('https://www.pornolomka.info/11303-grudastaja-telka-drochit-ljubimym-dildo.html')
 
 if __name__ == '__main__':
     main()
