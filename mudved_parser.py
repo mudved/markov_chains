@@ -33,7 +33,8 @@ def get_pages_urls_reg(cat_url, count_pages = 500):
         pages_urls_parsed = file.read().splitlines()
 
     for i in range(1, int(count_pages + 1)):
-        cat_page_url = cat_url + 'page/' + str(i) + '/'
+#        cat_page_url = cat_url + 'page/' + str(i) + '/'
+        cat_page_url = PARSING_PAGE_SETTINGS[donor]['template_cat_page_url'].format(cat_url = cat_url, i = i)
         cat_page_html = get_html(cat_page_url, False)
         error = do_reg(cat_page_html, donor, 'error_reg')
         if error != '':
@@ -163,11 +164,11 @@ def test_reg(url):
 def main():
 
     #res = multy_parser_reg('http://pornolomka.me', 4)
-    res = multy_parser_reg('https://www.pornolomka.info', 4)
+    #res = multy_parser_reg('https://www.pornolomka.info', 4)
     #('https://www.poimel.cc')
     #('https://www.pornolomka.info')
-    #test_reg('http://pornolomka.me/8372-chb-domashka.html')
-    #test_reg('https://www.pornolomka.info/11303-grudastaja-telka-drochit-ljubimym-dildo.html')
+    test_reg('http://pornolomka.me/8372-chb-domashka.html')
+    test_reg('https://www.pornolomka.info/11303-grudastaja-telka-drochit-ljubimym-dildo.html')
 
 if __name__ == '__main__':
     main()
