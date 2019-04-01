@@ -18,7 +18,10 @@ def get_cats_urls_reg(index_url):
     cats_urls = []
 
     for cat in cats:
-        cat_url = index_url + cat
+        if index_url not in cat:
+            cat_url = index_url + cat
+        else:
+            cat_url = cat
         cats_urls.append(cat_url)
 
     return cats_urls
@@ -167,10 +170,10 @@ def main():
     #res = multy_parser_reg('https://www.pornolomka.info', 4)
     #('https://www.poimel.cc')
     #('https://www.pornolomka.info')
-    #test_reg('http://pornolomka.me/8372-chb-domashka.html')
+    test_reg('http://pornolomka.me/8372-chb-domashka.html')
     #test_reg('https://www.pornolomka.info/11303-grudastaja-telka-drochit-ljubimym-dildo.html')
-   # test_reg('http://krasivoe-porno.com/2680-krasivyy-analnyy-seks.html')
-    test_reg('https://porno666.tv/video/7437/')
+    #test_reg('http://krasivoe-porno.com/2680-krasivyy-analnyy-seks.html')
+    test_reg('https://porno666.tv/video/5821/')
 
 if __name__ == '__main__':
     main()
