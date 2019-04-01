@@ -168,12 +168,12 @@ def main():
 
     #res = multy_parser_reg('http://pornolomka.me', 4)
     #res = multy_parser_reg('https://www.pornolomka.info', 4)
+    res = multy_parser_reg('https://porno666.tv', 3)
     #('https://www.poimel.cc')
-    #('https://www.pornolomka.info')
-    test_reg('http://pornolomka.me/8372-chb-domashka.html')
+    #test_reg('http://pornolomka.me/8372-chb-domashka.html')
     #test_reg('https://www.pornolomka.info/11303-grudastaja-telka-drochit-ljubimym-dildo.html')
     #test_reg('http://krasivoe-porno.com/2680-krasivyy-analnyy-seks.html')
-    test_reg('https://porno666.tv/video/5821/')
+    #test_reg('https://porno666.tv/video/5821/')
 
 if __name__ == '__main__':
     main()

@@ -77,6 +77,6 @@ PARSING_PAGE_SETTINGS = {
                 'template_cat_page_url':r'{cat_url}{i}/',                     #Шаблон url страницы категории
                 'all_pages_url_reg':r'(?<=videos_list_items)\s*.*?(?="pagination)',      #Список ссылок на все страницы 
                 'pages_url_reg':r'(?<=href=")http.*?(?=")',           #Ссылка на страницу 
-                'error_reg':r'(?<=div class="info">).*?(?=</div>)'                 #Страница не существует
+                'error_reg':r'(?<=div class="page-error">).*?(?=</div>)'                 #Страница не существует
                 }
         }
