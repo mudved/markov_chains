@@ -35,6 +35,7 @@ def do_reg(html, donor, reg_template):
         reg_result = ''
         if reg_template != 'error_reg':
             print('{} not found'.format(reg_template))
+
     return reg_result
 
 def do_reg_list(html, donor, reg_template_all, reg_template):

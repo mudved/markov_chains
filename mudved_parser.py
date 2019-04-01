@@ -36,7 +36,6 @@ def get_pages_urls_reg(cat_url, count_pages = 500):
         pages_urls_parsed = file.read().splitlines()
 
     for i in range(1, int(count_pages + 1)):
-#        cat_page_url = cat_url + 'page/' + str(i) + '/'
         cat_page_url = PARSING_PAGE_SETTINGS[donor]['template_cat_page_url'].format(cat_url = cat_url, i = i)
         cat_page_html = get_html(cat_page_url, False)
         error = do_reg(cat_page_html, donor, 'error_reg')
@@ -47,10 +46,13 @@ def get_pages_urls_reg(cat_url, count_pages = 500):
         print("Parsing urls from page №", i, end = '\r')
         urls_on_page = do_reg_list(cat_page_html, donor, 'all_pages_url_reg', 'pages_url_reg')
 
-        for url_page in urls_on_page:
-            url = url_page.strip()
-            if url not in pages_urls_parsed:
-                pages_urls.append(url)
+        if urls_on_page != []:
+            for url_page in urls_on_page:
+                url = url_page.strip()
+                if url not in pages_urls_parsed:
+                    pages_urls.append(url)
+        else:
+            break
 
     pages_urls = list(set(pages_urls))
     return pages_urls
